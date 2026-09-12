@@ -19,7 +19,8 @@
         <p>Door opens on first load · Tap it again anytime for the summary</p>
       </header>
 
-      <div class="phone" aria-label="Harmony mobile mockup">
+      <div class="phone-shell">
+        <div class="phone" aria-label="Harmony mobile mockup">
         <div class="phone-notch" aria-hidden="true"></div>
         <div class="phone-screen">
           <!-- HOME -->
@@ -27,6 +28,7 @@
             <div class="entry-content">
               <p class="brand">Harmony</p>
 
+              <div class="home-stage">
               <div class="house-scene">
                 <svg class="house" viewBox="0 0 280 260" role="img" aria-label="Apartment entrance">
                   <defs>
@@ -66,12 +68,27 @@
                   class="door-btn"
                   aria-label="Open the door to see your apartment"
                 >
+                  <span class="door-pulse" aria-hidden="true"></span>
                   <span class="door-face">
                     <span class="door-panel"></span>
                     <span class="door-panel door-panel-lower"></span>
                     <span class="door-knob"></span>
                   </span>
-                  <span class="door-hint">Tap to enter</span>
+                  <span class="door-hint">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M8 12h8m0 0l-3-3m3 3l-3 3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        transform="rotate(90 12 12)"
+                      />
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75" opacity="0.35" />
+                    </svg>
+                    Tap the door
+                  </span>
                 </button>
               </div>
 
@@ -83,6 +100,7 @@
                 <div class="avatar b" title="Sam">S</div>
                 <div class="avatar c" title="Alex">A</div>
                 <div class="avatar d" title="Riley">R</div>
+              </div>
               </div>
             </div>
 
@@ -145,18 +163,18 @@
                   <h2>Yours this week</h2>
                 </div>
                 <ul class="chore-list" id="your-weekly">
-                  <li class="chore-item" data-id="c1">
-                    <button type="button" class="check" aria-label="Mark Kitchen wipe-down done"></button>
+                  <li class="chore-item is-mine" data-id="c1">
+                    <button type="button" class="check" aria-label="Mark Kitchen wipe-down done" aria-pressed="false"></button>
                     <div class="chore-body">
                       <p class="chore-title">Kitchen wipe-down</p>
-                      <p class="chore-meta">Due Sun</p>
+                      <p class="chore-meta">Due Sun · Yours</p>
                     </div>
                   </li>
-                  <li class="chore-item" data-id="c2">
-                    <button type="button" class="check" aria-label="Mark Take out recycling done"></button>
+                  <li class="chore-item is-mine" data-id="c2">
+                    <button type="button" class="check" aria-label="Mark Take out recycling done" aria-pressed="false"></button>
                     <div class="chore-body">
                       <p class="chore-title">Take out recycling</p>
-                      <p class="chore-meta">Due Wed</p>
+                      <p class="chore-meta">Due Wed · Yours</p>
                     </div>
                   </li>
                 </ul>
@@ -167,29 +185,27 @@
                   <h2>Everyone else</h2>
                 </div>
                 <ul class="chore-list">
-                  <li class="chore-item is-other">
-                    <button type="button" class="check" disabled aria-label="Jordan's chore"></button>
+                  <li class="chore-item is-other" data-assignee="Jordan">
+                    <span class="assignee a" title="Jordan">J</span>
                     <div class="chore-body">
                       <p class="chore-title">Bathroom clean</p>
                       <p class="chore-meta">Due Sat</p>
                     </div>
-                    <span class="assignee a">J</span>
                   </li>
-                  <li class="chore-item is-other">
-                    <button type="button" class="check" disabled aria-label="Sam's chore"></button>
+                  <li class="chore-item is-other" data-assignee="Sam">
+                    <span class="assignee b" title="Sam">S</span>
                     <div class="chore-body">
                       <p class="chore-title">Vacuum living room</p>
                       <p class="chore-meta">Due Fri</p>
                     </div>
-                    <span class="assignee b">S</span>
                   </li>
-                  <li class="chore-item is-other is-done">
-                    <button type="button" class="check" disabled aria-pressed="true" aria-label="Alex's chore done"></button>
+                  <li class="chore-item is-other is-done" data-assignee="Alex">
+                    <span class="assignee c" title="Alex">A</span>
                     <div class="chore-body">
                       <p class="chore-title">Wipe counters</p>
                       <p class="chore-meta">Done</p>
                     </div>
-                    <span class="assignee c">A</span>
+                    <span class="status-pill">Done</span>
                   </li>
                 </ul>
               </section>
@@ -199,18 +215,18 @@
                   <h2>Yours this month</h2>
                 </div>
                 <ul class="chore-list" id="your-monthly">
-                  <li class="chore-item" data-id="m1">
-                    <button type="button" class="check" aria-label="Mark Deep clean fridge done"></button>
+                  <li class="chore-item is-mine" data-id="m1">
+                    <button type="button" class="check" aria-label="Mark Deep clean fridge done" aria-pressed="false"></button>
                     <div class="chore-body">
                       <p class="chore-title">Deep clean fridge</p>
-                      <p class="chore-meta">Due Sep 28</p>
+                      <p class="chore-meta">Due Sep 28 · Yours</p>
                     </div>
                   </li>
-                  <li class="chore-item" data-id="m2">
-                    <button type="button" class="check" aria-label="Mark Wipe baseboards done"></button>
+                  <li class="chore-item is-mine" data-id="m2">
+                    <button type="button" class="check" aria-label="Mark Wipe baseboards done" aria-pressed="false"></button>
                     <div class="chore-body">
                       <p class="chore-title">Wipe baseboards</p>
-                      <p class="chore-meta">Due Sep 30</p>
+                      <p class="chore-meta">Due Sep 30 · Yours</p>
                     </div>
                   </li>
                 </ul>
@@ -221,21 +237,19 @@
                   <h2>Household monthly</h2>
                 </div>
                 <ul class="chore-list">
-                  <li class="chore-item is-other">
-                    <button type="button" class="check" disabled></button>
+                  <li class="chore-item is-other" data-assignee="Riley">
+                    <span class="assignee d" title="Riley">R</span>
                     <div class="chore-body">
                       <p class="chore-title">Clean oven</p>
                       <p class="chore-meta">Due Sep 25</p>
                     </div>
-                    <span class="assignee d">R</span>
                   </li>
-                  <li class="chore-item is-other">
-                    <button type="button" class="check" disabled></button>
+                  <li class="chore-item is-other" data-assignee="Jordan">
+                    <span class="assignee a" title="Jordan">J</span>
                     <div class="chore-body">
                       <p class="chore-title">Wash windows</p>
                       <p class="chore-meta">Due Sep 30</p>
                     </div>
-                    <span class="assignee a">J</span>
                   </li>
                 </ul>
               </section>
@@ -261,14 +275,14 @@
                   <h2>Needed</h2>
                 </div>
                 <ul class="supply-list" id="needed-list">
-                  <li class="supply-item" data-id="s1">
+                  <li class="supply-item is-needed" data-id="s1">
                     <div class="supply-body">
                       <p class="supply-title">Toilet paper</p>
                       <p class="supply-meta">Marked low by Sam · Shared bath</p>
                     </div>
                     <button type="button" class="buy-btn" data-action="bought">I bought it</button>
                   </li>
-                  <li class="supply-item" data-id="s2">
+                  <li class="supply-item is-needed" data-id="s2">
                     <div class="supply-body">
                       <p class="supply-title">Dish soap</p>
                       <p class="supply-meta">Marked low by You · Kitchen</p>
@@ -314,6 +328,7 @@
               Supplies
             </button>
           </nav>
+        </div>
         </div>
       </div>
     </div>
