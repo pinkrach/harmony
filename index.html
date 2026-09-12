@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Harmony — Roommate Living</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <header class="stage-label">
+        <p class="eyebrow">Harmony mockup</p>
+        <p>Door opens on first load · Tap it again anytime for the summary</p>
+      </header>
+
+      <div class="phone" aria-label="Harmony mobile mockup">
+        <div class="phone-notch" aria-hidden="true"></div>
+        <div class="phone-screen">
+          <!-- HOME -->
+          <section id="screen-home" class="screen screen-entry is-active" aria-label="Home">
+            <div class="entry-content">
+              <p class="brand">Harmony</p>
+
+              <div class="house-scene">
+                <svg class="house" viewBox="0 0 280 260" role="img" aria-label="Apartment entrance">
+                  <defs>
+                    <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#d8e0d6" />
+                      <stop offset="100%" stop-color="#b7c4b5" />
+                    </linearGradient>
+                    <linearGradient id="roofGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#3d4a45" />
+                      <stop offset="100%" stop-color="#2a3330" />
+                    </linearGradient>
+                    <linearGradient id="doorGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#8b5e3c" />
+                      <stop offset="55%" stop-color="#a67248" />
+                      <stop offset="100%" stop-color="#7a4f32" />
+                    </linearGradient>
+                  </defs>
+                  <!-- ground -->
+                  <ellipse cx="140" cy="238" rx="110" ry="12" fill="#9aafa0" opacity="0.45" />
+                  <!-- house body -->
+                  <path d="M40 110 L140 42 L240 110 V220 H40 Z" fill="url(#wallGrad)" />
+                  <path d="M32 112 L140 36 L248 112 L230 112 L140 52 L50 112 Z" fill="url(#roofGrad)" />
+                  <!-- windows -->
+                  <rect x="62" y="128" width="36" height="36" rx="4" fill="#eef4f1" stroke="#5f7368" stroke-width="3" />
+                  <rect x="182" y="128" width="36" height="36" rx="4" fill="#eef4f1" stroke="#5f7368" stroke-width="3" />
+                  <line x1="80" y1="128" x2="80" y2="164" stroke="#5f7368" stroke-width="2" />
+                  <line x1="62" y1="146" x2="98" y2="146" stroke="#5f7368" stroke-width="2" />
+                  <line x1="200" y1="128" x2="200" y2="164" stroke="#5f7368" stroke-width="2" />
+                  <line x1="182" y1="146" x2="218" y2="146" stroke="#5f7368" stroke-width="2" />
+                  <!-- porch -->
+                  <rect x="108" y="210" width="64" height="10" rx="2" fill="#6d7f74" />
+                </svg>
+
+                <button
+                  type="button"
+                  id="door-btn"
+                  class="door-btn"
+                  aria-label="Open the door to see your apartment"
+                >
+                  <span class="door-face">
+                    <span class="door-panel"></span>
+                    <span class="door-panel door-panel-lower"></span>
+                    <span class="door-knob"></span>
+                  </span>
+                  <span class="door-hint">Tap to enter</span>
+                </button>
+              </div>
+
+              <div class="roommate-row" aria-label="Your household">
+                <div class="avatar you" title="You">
+                  <span>You</span>
+                </div>
+                <div class="avatar a" title="Jordan">J</div>
+                <div class="avatar b" title="Sam">S</div>
+                <div class="avatar c" title="Alex">A</div>
+                <div class="avatar d" title="Riley">R</div>
+              </div>
+            </div>
+
+            <!-- Apartment snapshot overlay after door opens -->
+            <div id="apt-snapshot" class="apt-snapshot" hidden>
+              <div class="snapshot-card">
+                <p class="snapshot-kicker">Inside 4B · Today</p>
+                <h2>Your place at a glance</h2>
+                <ul class="snapshot-list">
+                  <li>
+                    <div>
+                      <strong>3 chores due this week</strong>
+                      <p>Kitchen wipe-down is yours by Sunday</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div>
+                      <strong>2 supplies running low</strong>
+                      <p>Toilet paper & dish soap</p>
+                    </div>
+                  </li>
+                </ul>
+                <button type="button" id="enter-app" class="primary-btn">Continue to chores</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- CHORES -->
+          <section id="screen-chores" class="screen screen-chores" aria-label="Chore tracker" hidden>
+            <header class="app-header">
+              <h1>Chores</h1>
+            </header>
+
+            <div class="segmented" role="tablist" aria-label="Chore period">
+              <button type="button" class="seg is-active" data-period="weekly" role="tab" aria-selected="true">Weekly</button>
+              <button type="button" class="seg" data-period="monthly" role="tab" aria-selected="false">Monthly</button>
+            </div>
+
+            <div class="progress-card" aria-live="polite">
+              <div class="progress-head">
+                <p class="progress-label"><span id="progress-period">This week</span></p>
+                <p class="progress-meta" id="progress-meta">0 of 0 done</p>
+              </div>
+              <div
+                class="progress-track"
+                id="chore-progress"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+                aria-label="Apartment chore progress"
+              >
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+            </div>
+
+            <div class="scroll-area">
+              <section class="chore-block" data-show="weekly">
+                <div class="block-head">
+                  <h2>Yours this week</h2>
+                </div>
+                <ul class="chore-list" id="your-weekly">
+                  <li class="chore-item" data-id="c1">
+                    <button type="button" class="check" aria-label="Mark Kitchen wipe-down done"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Kitchen wipe-down</p>
+                      <p class="chore-meta">Due Sun</p>
+                    </div>
+                  </li>
+                  <li class="chore-item" data-id="c2">
+                    <button type="button" class="check" aria-label="Mark Take out recycling done"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Take out recycling</p>
+                      <p class="chore-meta">Due Wed</p>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="chore-block" data-show="weekly">
+                <div class="block-head">
+                  <h2>Everyone else</h2>
+                </div>
+                <ul class="chore-list">
+                  <li class="chore-item is-other">
+                    <button type="button" class="check" disabled aria-label="Jordan's chore"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Bathroom clean</p>
+                      <p class="chore-meta">Due Sat</p>
+                    </div>
+                    <span class="assignee a">J</span>
+                  </li>
+                  <li class="chore-item is-other">
+                    <button type="button" class="check" disabled aria-label="Sam's chore"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Vacuum living room</p>
+                      <p class="chore-meta">Due Fri</p>
+                    </div>
+                    <span class="assignee b">S</span>
+                  </li>
+                  <li class="chore-item is-other is-done">
+                    <button type="button" class="check" disabled aria-pressed="true" aria-label="Alex's chore done"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Wipe counters</p>
+                      <p class="chore-meta">Done</p>
+                    </div>
+                    <span class="assignee c">A</span>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="chore-block" data-show="monthly" hidden>
+                <div class="block-head">
+                  <h2>Yours this month</h2>
+                </div>
+                <ul class="chore-list" id="your-monthly">
+                  <li class="chore-item" data-id="m1">
+                    <button type="button" class="check" aria-label="Mark Deep clean fridge done"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Deep clean fridge</p>
+                      <p class="chore-meta">Due Sep 28</p>
+                    </div>
+                  </li>
+                  <li class="chore-item" data-id="m2">
+                    <button type="button" class="check" aria-label="Mark Wipe baseboards done"></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Wipe baseboards</p>
+                      <p class="chore-meta">Due Sep 30</p>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="chore-block" data-show="monthly" hidden>
+                <div class="block-head">
+                  <h2>Household monthly</h2>
+                </div>
+                <ul class="chore-list">
+                  <li class="chore-item is-other">
+                    <button type="button" class="check" disabled></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Clean oven</p>
+                      <p class="chore-meta">Due Sep 25</p>
+                    </div>
+                    <span class="assignee d">R</span>
+                  </li>
+                  <li class="chore-item is-other">
+                    <button type="button" class="check" disabled></button>
+                    <div class="chore-body">
+                      <p class="chore-title">Wash windows</p>
+                      <p class="chore-meta">Due Sep 30</p>
+                    </div>
+                    <span class="assignee a">J</span>
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <!-- SUPPLIES -->
+          <section id="screen-supplies" class="screen screen-supplies" aria-label="Supplies tracker" hidden>
+            <header class="app-header">
+              <h1>Supplies</h1>
+              <button type="button" id="add-supply-toggle" class="ghost-btn" aria-expanded="false">Add</button>
+            </header>
+
+            <form id="add-supply-form" class="add-form" hidden>
+              <label class="sr-only" for="supply-name">Supply name</label>
+              <input id="supply-name" type="text" placeholder="What do we need?" maxlength="40" autocomplete="off" />
+              <button type="submit" class="primary-btn compact">Add to list</button>
+            </form>
+
+            <div class="scroll-area">
+              <section class="supply-block">
+                <div class="block-head">
+                  <h2>Needed</h2>
+                </div>
+                <ul class="supply-list" id="needed-list">
+                  <li class="supply-item" data-id="s1">
+                    <div class="supply-body">
+                      <p class="supply-title">Toilet paper</p>
+                      <p class="supply-meta">Marked low by Sam · Shared bath</p>
+                    </div>
+                    <button type="button" class="buy-btn" data-action="bought">I bought it</button>
+                  </li>
+                  <li class="supply-item" data-id="s2">
+                    <div class="supply-body">
+                      <p class="supply-title">Dish soap</p>
+                      <p class="supply-meta">Marked low by You · Kitchen</p>
+                    </div>
+                    <button type="button" class="buy-btn" data-action="bought">I bought it</button>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="supply-block">
+                <div class="block-head">
+                  <h2>Stocked</h2>
+                </div>
+                <ul class="supply-list" id="stocked-list">
+                  <li class="supply-item is-stocked" data-id="s3">
+                    <div class="supply-body">
+                      <p class="supply-title">Paper towels</p>
+                      <p class="supply-meta">Bought by Alex · Yesterday</p>
+                    </div>
+                  </li>
+                  <li class="supply-item is-stocked" data-id="s4">
+                    <div class="supply-body">
+                      <p class="supply-title">Trash bags</p>
+                      <p class="supply-meta">Bought by Jordan · Mon</p>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <nav id="bottom-nav" class="bottom-nav" aria-label="Main">
+            <button type="button" class="nav-btn is-active" data-nav="home">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+              Home
+            </button>
+            <button type="button" class="nav-btn" data-nav="chores">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Chores
+            </button>
+            <button type="button" class="nav-btn" data-nav="supplies">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Supplies
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
