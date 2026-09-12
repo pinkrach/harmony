@@ -44,6 +44,24 @@ Organization and harmony — responsibilities stay clear and transparent so the 
 
 **Design question it helps examine:** How distinct should “needs action” and “already handled” feel so people know what to do next without rereading the whole list?
 
+## Design Justification
+
+At first glance people can see the image of a house, the supplies, and chores on the home page making it clear that this app has to do with the cleaning of a home. The landing page is simple with only elements that need to be there, and can be accessed from any screen. Screens 2 and 3 use grouping by space and by similarity. The tasks still needing done, tasks completed, supplies needed, and supplies bought are all separate looks and grouped together. Initially the AI overcomplicated things and added a lot more detail than necessary. I decided to have it remove some extra labels and components that were not needed. Originally the AI also made chores and supplies look the same even though they represented different things so I made them more original.
+
+### Before & after
+
+**Home**
+
+![Home before and after](docs/before-after-home.png)
+
+**Chores**
+
+![Chores before and after](docs/before-after-chores.png)
+
+**Supplies**
+
+![Supplies before and after](docs/before-after-supplies.png)
+
 ## Questions
 
 Tell me what you do to communicate and divide chores with your roommates? What works and what is frustrating about your current approach?

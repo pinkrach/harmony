@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Harmony — Before & After</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #1f2a26;
+        --ink-soft: #4a5a54;
+        --sage-deep: #3f5a4c;
+        --frame-w: 214px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Outfit", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(900px 500px at 0% 0%, #d5e4da 0%, transparent 55%),
+          linear-gradient(165deg, #edf2ef 0%, #d9e3dc 100%);
+        min-height: 100vh;
+        padding: 2rem 1.25rem 3rem;
+      }
+
+      h1 {
+        margin: 0 0 0.35rem;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: 2rem;
+        color: var(--sage-deep);
+        text-align: center;
+      }
+
+      .intro {
+        margin: 0 auto 2rem;
+        max-width: 42rem;
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 0.95rem;
+      }
+
+      .screen-block {
+        margin: 0 auto 2.75rem;
+        max-width: 56rem;
+      }
+
+      .screen-block h2 {
+        margin: 0 0 1rem;
+        font-size: 1.15rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        text-align: center;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        justify-items: center;
+        align-items: start;
+      }
+
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 0.65rem;
+        justify-items: center;
+      }
+
+      figcaption {
+        font-weight: 650;
+        font-size: 0.9rem;
+        color: var(--sage-deep);
+      }
+
+      .frame {
+        width: var(--frame-w);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 16px 40px rgba(31, 42, 38, 0.18);
+        background: #121816;
+        position: relative;
+      }
+
+      .frame.before {
+        height: calc(var(--frame-w) * 780 / 390);
+      }
+
+      .frame.after {
+        height: calc(var(--frame-w) * 926 / 428);
+      }
+
+      .frame iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 0;
+        transform-origin: top left;
+        pointer-events: none;
+      }
+
+      .frame.before iframe {
+        width: 390px;
+        height: 780px;
+        transform: scale(calc(var(--frame-w) / 390px));
+      }
+
+      .frame.after iframe {
+        width: 428px;
+        height: 926px;
+        transform: scale(calc(var(--frame-w) / 428px));
+      }
+
+      @media (max-width: 720px) {
+        .pair {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Before & After</h1>
+    <p class="intro">
+      Side-by-side views of each screen for screenshots.
+      <strong>Before</strong> is the first version pushed to GitHub;
+      <strong>After</strong> is the current mockup.
+      Open this file in your browser, then screenshot each pair.
+    </p>
+
+    <section class="screen-block">
+      <h2>Home</h2>
+      <div class="pair">
+        <figure>
+          <figcaption>Before</figcaption>
+          <div class="frame before">
+            <iframe title="Home before" src="before/index.html?screen=home&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+        <figure>
+          <figcaption>After</figcaption>
+          <div class="frame after">
+            <iframe title="Home after" src="index.html?screen=home&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="screen-block">
+      <h2>Chores</h2>
+      <div class="pair">
+        <figure>
+          <figcaption>Before</figcaption>
+          <div class="frame before">
+            <iframe title="Chores before" src="before/index.html?screen=chores&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+        <figure>
+          <figcaption>After</figcaption>
+          <div class="frame after">
+            <iframe title="Chores after" src="index.html?screen=chores&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="screen-block">
+      <h2>Supplies</h2>
+      <div class="pair">
+        <figure>
+          <figcaption>Before</figcaption>
+          <div class="frame before">
+            <iframe title="Supplies before" src="before/index.html?screen=supplies&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+        <figure>
+          <figcaption>After</figcaption>
+          <div class="frame after">
+            <iframe title="Supplies after" src="index.html?screen=supplies&nodoor=1&compare=1"></iframe>
+          </div>
+        </figure>
+      </div>
+    </section>
+  </body>
+</html>

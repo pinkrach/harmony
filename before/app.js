@@ -1,8 +1,11 @@
 (() => {
+  const HINT_KEY = "harmony_door_hint_seen";
+
   const screenHome = document.getElementById("screen-home");
   const screenChores = document.getElementById("screen-chores");
   const screenSupplies = document.getElementById("screen-supplies");
   const doorBtn = document.getElementById("door-btn");
+  const doorHint = doorBtn.querySelector(".door-hint");
   const aptSnapshot = document.getElementById("apt-snapshot");
   const enterAppBtn = document.getElementById("enter-app");
   const navButtons = document.querySelectorAll("[data-nav]");
@@ -16,64 +19,15 @@
   const progressFill = document.getElementById("progress-fill");
   const progressMeta = document.getElementById("progress-meta");
   const choreProgress = document.getElementById("chore-progress");
-  const phoneShell = document.querySelector(".phone-shell");
-  const stage = document.querySelector(".stage");
-  const stageLabel = document.querySelector(".stage-label");
-
-  const params = new URLSearchParams(window.location.search);
-  const startScreen = params.get("screen") || "home";
-  const skipDoor = params.has("nodoor") || params.has("compare");
-  const isCompare = params.has("compare");
-
-  if (isCompare) {
-    document.body.classList.add("is-compare");
-  }
-
-  const PHONE_W = 428;
-  const PHONE_H = 926;
-
-  function fitPhoneToViewport() {
-    if (!phoneShell || !stage) return;
-
-    if (isCompare) {
-      phoneShell.style.setProperty("--phone-scale", "1");
-      return;
-    }
-
-    // On small/mobile viewports the shell goes full-bleed via CSS
-    if (window.matchMedia("(max-width: 430px)").matches) {
-      phoneShell.style.setProperty("--phone-scale", "1");
-      return;
-    }
-
-    const styles = window.getComputedStyle(stage);
-    const padX =
-      (parseFloat(styles.paddingLeft) || 0) + (parseFloat(styles.paddingRight) || 0);
-    const padY =
-      (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
-    const gap = parseFloat(styles.gap) || 0;
-    const labelH = stageLabel && stageLabel.offsetParent !== null
-      ? stageLabel.getBoundingClientRect().height + gap
-      : 0;
-
-    const availableW = stage.clientWidth - padX;
-    const availableH = stage.clientHeight - padY - labelH;
-    const scale = Math.min(1, availableW / PHONE_W, availableH / PHONE_H);
-
-    phoneShell.style.setProperty("--phone-scale", String(Math.max(scale, 0.2)));
-  }
-
-  fitPhoneToViewport();
-  window.addEventListener("resize", fitPhoneToViewport);
-  window.addEventListener("load", fitPhoneToViewport);
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(fitPhoneToViewport);
-  }
 
   let currentPeriod = "weekly";
   let doorRevealTimer = null;
   let autoOpenTimer = null;
   let hasAutoOpened = false;
+
+  if (sessionStorage.getItem(HINT_KEY)) {
+    doorHint.hidden = true;
+  }
 
   function updateChoreProgress() {
     const items = screenChores.querySelectorAll(
@@ -149,6 +103,8 @@
     if (doorBtn.classList.contains("is-open")) return;
     doorBtn.classList.add("is-open");
     doorBtn.setAttribute("aria-expanded", "true");
+    doorHint.hidden = true;
+    sessionStorage.setItem(HINT_KEY, "1");
 
     doorRevealTimer = window.setTimeout(() => {
       aptSnapshot.hidden = false;
@@ -161,6 +117,14 @@
     doorBtn.classList.remove("is-open");
     doorBtn.setAttribute("aria-expanded", "false");
     showScreen("chores");
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const startScreen = params.get("screen") || "home";
+  const skipDoor = params.has("nodoor") || params.has("compare");
+
+  if (params.has("compare")) {
+    document.body.classList.add("is-compare");
   }
 
   showScreen(["home", "chores", "supplies"].includes(startScreen) ? startScreen : "home");
@@ -196,7 +160,7 @@
     });
   });
 
-  document.querySelectorAll(".chore-item.is-mine .check").forEach((check) => {
+  document.querySelectorAll(".chore-item:not(.is-other) .check").forEach((check) => {
     check.addEventListener("click", () => {
       const item = check.closest(".chore-item");
       const done = item.classList.toggle("is-done");
@@ -251,7 +215,7 @@
     if (!name) return;
 
     const li = document.createElement("li");
-    li.className = "supply-item is-needed";
+    li.className = "supply-item";
     li.innerHTML = `
       <div class="supply-body">
         <p class="supply-title"></p>
