@@ -2,7 +2,7 @@
 
 Interactive mobile mockup for college roommates who want a clearer, lower-drama way to share an apartment.
 
-Open `index.html` in a browser to view the prototype.
+Open `index.html` in a browser to view the prototype. Use the top buttons to switch between **V1** and **Rachel's Version**.
 
 ## Product framing
 

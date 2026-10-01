@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Harmony — Rachel's Version (Lo-fi)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <header class="stage-label">
+        <p class="eyebrow">Rachel's Version · Low-fidelity wireframe</p>
+        <p>Follows the Harmony roommate management workflow</p>
+      </header>
+
+      <button type="button" class="skip-to-home" data-go="dashboard">
+        Skip to Home
+      </button>
+
+      <div class="phone-shell">
+        <div class="phone" aria-label="Rachel's Version wireframe">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-home-indicator" aria-hidden="true"></div>
+          <div class="phone-screen">
+            <!-- WELCOME -->
+            <section class="screen is-active" data-screen="welcome" aria-label="Get started">
+              <div class="wire-body welcome-body">
+                <h1 class="welcome-brand">Harmony</h1>
+
+                <div class="welcome-house" aria-hidden="true">
+                  <svg class="house" viewBox="0 0 280 260" role="img" aria-label="Home">
+                    <defs>
+                      <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d8e0d6" />
+                        <stop offset="100%" stop-color="#b7c4b5" />
+                      </linearGradient>
+                      <linearGradient id="roofGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#3d4a45" />
+                        <stop offset="100%" stop-color="#2a3330" />
+                      </linearGradient>
+                      <linearGradient id="doorGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#8b5e3c" />
+                        <stop offset="55%" stop-color="#a67248" />
+                        <stop offset="100%" stop-color="#7a4f32" />
+                      </linearGradient>
+                    </defs>
+                    <ellipse cx="140" cy="238" rx="110" ry="12" fill="#9aafa0" opacity="0.45" />
+                    <path d="M40 110 L140 42 L240 110 V220 H40 Z" fill="url(#wallGrad)" />
+                    <path d="M32 112 L140 36 L248 112 L230 112 L140 52 L50 112 Z" fill="url(#roofGrad)" />
+                    <rect x="62" y="128" width="36" height="36" rx="4" fill="#eef4f1" stroke="#5f7368" stroke-width="3" />
+                    <rect x="182" y="128" width="36" height="36" rx="4" fill="#eef4f1" stroke="#5f7368" stroke-width="3" />
+                    <line x1="80" y1="128" x2="80" y2="164" stroke="#5f7368" stroke-width="2" />
+                    <line x1="62" y1="146" x2="98" y2="146" stroke="#5f7368" stroke-width="2" />
+                    <line x1="200" y1="128" x2="200" y2="164" stroke="#5f7368" stroke-width="2" />
+                    <line x1="182" y1="146" x2="218" y2="146" stroke="#5f7368" stroke-width="2" />
+                    <rect x="112" y="128" width="56" height="92" rx="3" fill="url(#doorGrad)" />
+                    <rect x="120" y="136" width="40" height="28" rx="2" fill="none" stroke="rgba(50,30,16,0.28)" stroke-width="1.5" />
+                    <rect x="120" y="172" width="40" height="34" rx="2" fill="none" stroke="rgba(50,30,16,0.28)" stroke-width="1.5" />
+                    <circle cx="156" cy="174" r="4" fill="#e8c27a" />
+                    <rect x="108" y="210" width="64" height="10" rx="2" fill="#6d7f74" />
+                  </svg>
+                </div>
+
+                <div class="welcome-actions">
+                  <p class="welcome-question">Have an account?</p>
+                  <div class="wire-actions welcome-btns">
+                    <button type="button" class="wire-btn primary" data-go="signin">Sign in</button>
+                    <button type="button" class="wire-btn" data-go="signup">Create account</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- SIGN IN -->
+            <section class="screen" data-screen="signin" hidden aria-label="Sign in">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Sign in</h1>
+                  <form class="auth-form" id="signin-form">
+                    <label class="wire-field" for="signin-email">
+                      Email
+                      <input
+                        id="signin-email"
+                        class="wire-input"
+                        type="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="you@school.edu"
+                        required
+                      />
+                    </label>
+                    <label class="wire-field" for="signin-password">
+                      Password
+                      <input
+                        id="signin-password"
+                        class="wire-input"
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="Password"
+                        required
+                      />
+                    </label>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="welcome">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- SIGN UP -->
+            <section class="screen" data-screen="signup" hidden aria-label="Create account">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Create account</h1>
+                  <form class="auth-form" id="signup-form">
+                    <label class="wire-field" for="signup-name">
+                      Name
+                      <input
+                        id="signup-name"
+                        class="wire-input"
+                        type="text"
+                        name="name"
+                        autocomplete="name"
+                        placeholder="Your name"
+                        required
+                      />
+                    </label>
+                    <label class="wire-field" for="signup-email">
+                      Email
+                      <input
+                        id="signup-email"
+                        class="wire-input"
+                        type="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="you@school.edu"
+                        required
+                      />
+                    </label>
+                    <label class="wire-field" for="signup-password">
+                      Password
+                      <input
+                        id="signup-password"
+                        class="wire-input"
+                        type="password"
+                        name="password"
+                        autocomplete="new-password"
+                        placeholder="Password"
+                        required
+                      />
+                    </label>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="welcome">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- HOUSEHOLD CHECK -->
+            <section class="screen" data-screen="household-check" hidden aria-label="Household">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Joined a household?</h1>
+                  <div class="wire-actions welcome-btns household-choice">
+                    <button type="button" class="wire-btn primary" data-go="join-household">Join household</button>
+                    <button type="button" class="wire-btn" data-go="create-household">Create household</button>
+                  </div>
+                  <div class="auth-actions household-cancel">
+                    <button type="button" class="wire-btn" data-go="welcome">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- JOIN -->
+            <section class="screen" data-screen="join-household" hidden aria-label="Join household">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Join household</h1>
+                  <form class="auth-form" id="join-form">
+                    <label class="wire-field" for="join-code">
+                      Invite code
+                      <input
+                        id="join-code"
+                        class="wire-input"
+                        type="text"
+                        name="code"
+                        autocomplete="one-time-code"
+                        placeholder="Enter invite code"
+                        required
+                      />
+                    </label>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="household-check">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- CREATE -->
+            <section class="screen" data-screen="create-household" hidden aria-label="Create household">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Create household</h1>
+                  <form class="auth-form" id="create-household-form">
+                    <label class="wire-field" for="household-name">
+                      Household name
+                      <input
+                        id="household-name"
+                        class="wire-input"
+                        type="text"
+                        name="name"
+                        placeholder="Apartment name"
+                        required
+                      />
+                    </label>
+                    <label class="wire-field" for="household-address">
+                      Address (optional)
+                      <input
+                        id="household-address"
+                        class="wire-input"
+                        type="text"
+                        name="address"
+                        placeholder="Street address"
+                      />
+                    </label>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="household-check">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- INVITE -->
+            <section class="screen" data-screen="invite" hidden aria-label="Invite roommates">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Invite roommates</h1>
+                  <form class="auth-form" id="invite-form">
+                    <label class="wire-field" for="roommate-1">
+                      Roommate 1
+                      <input
+                        id="roommate-1"
+                        class="wire-input"
+                        type="email"
+                        name="roommate1"
+                        placeholder="email or phone"
+                      />
+                    </label>
+                    <label class="wire-field" for="roommate-2">
+                      Roommate 2
+                      <input
+                        id="roommate-2"
+                        class="wire-input"
+                        type="email"
+                        name="roommate2"
+                        placeholder="email or phone"
+                      />
+                    </label>
+                    <button type="button" class="wire-btn add-roommate" id="add-roommate">
+                      + Add another
+                    </button>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="household-check">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- PREFERENCES -->
+            <section class="screen" data-screen="preferences" hidden aria-label="Preferences">
+              <div class="wire-body auth-body">
+                <div class="auth-card prefs-card">
+                  <h1 class="auth-title">Household preferences</h1>
+                  <form class="auth-form" id="preferences-form">
+                    <label class="pref-row">
+                      <span>Chores updates</span>
+                      <input type="checkbox" name="chores" checked />
+                    </label>
+                    <label class="pref-row">
+                      <span>Payments / bills</span>
+                      <input type="checkbox" name="payments" checked />
+                    </label>
+                    <label class="pref-row">
+                      <span>Lists</span>
+                      <input type="checkbox" name="lists" checked />
+                    </label>
+                    <label class="pref-row">
+                      <span>Parking / calendar</span>
+                      <input type="checkbox" name="parking" checked />
+                    </label>
+                    <label class="pref-row">
+                      <span>SMS if no app</span>
+                      <input type="checkbox" name="sms" />
+                    </label>
+                    <div class="auth-actions">
+                      <button type="button" class="wire-btn" data-go="invite">Cancel</button>
+                      <button type="submit" class="wire-btn primary">Continue</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- DASHBOARD -->
+            <section class="screen" data-screen="dashboard" hidden aria-label="Household dashboard">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Harmony</p>
+                  <h1 class="app-title">Home</h1>
+                </div>
+                <button type="button" class="wire-btn compact" data-go="comms">Alerts</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <button type="button" class="app-card" data-go="chores">
+                  <strong>Upcoming chores</strong>
+                  <span>Kitchen · Sun · You</span>
+                </button>
+                <button type="button" class="app-card" data-go="payments">
+                  <strong>Payments</strong>
+                  <span>Rent due · $400 each</span>
+                </button>
+                <button type="button" class="app-card" data-go="lists">
+                  <strong>Lists</strong>
+                  <span>Shopping · 3 items left</span>
+                </button>
+                <button type="button" class="app-card" data-go="calendar">
+                  <strong>Calendar & parking</strong>
+                  <span>Tonight · Spot B reserved</span>
+                </button>
+                <button type="button" class="app-card" data-go="comms">
+                  <strong>Notifications</strong>
+                  <span>2 new updates</span>
+                </button>
+                <button type="button" class="app-card soft" data-go="engagement">
+                  <strong>Fun features</strong>
+                  <span>Optional points & streaks</span>
+                </button>
+                <button type="button" class="app-card soft" data-go="overview">
+                  <strong>Household overview</strong>
+                  <span>Status at a glance</span>
+                </button>
+              </div>
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" class="is-active" data-go="dashboard">Home</button>
+                <button type="button" data-go="chores">Chores</button>
+                <button type="button" data-go="payments">Pay</button>
+                <button type="button" data-go="lists">Lists</button>
+                <button type="button" data-go="calendar">Cal</button>
+              </nav>
+            </section>
+
+            <!-- CHORES -->
+            <section class="screen" data-screen="chores" hidden aria-label="Chores">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Chores</h1>
+                </div>
+                <button type="button" class="wire-btn compact primary">Add</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <div class="section-label">
+                  <h2>This week</h2>
+                  <button type="button" class="text-action">Rotate</button>
+                </div>
+                <label class="task-row">
+                  <input type="checkbox" />
+                  <span>
+                    <strong>Kitchen wipe-down</strong>
+                    <small>You · Due Sun</small>
+                  </span>
+                </label>
+                <label class="task-row">
+                  <input type="checkbox" />
+                  <span>
+                    <strong>Bathroom clean</strong>
+                    <small>Jordan · Due Sat</small>
+                  </span>
+                </label>
+                <label class="task-row done">
+                  <input type="checkbox" checked />
+                  <span>
+                    <strong>Wipe counters</strong>
+                    <small>Alex · Done</small>
+                  </span>
+                </label>
+                <div class="hint-card">
+                  Overdue chores can send reminders in-app or by text.
+                </div>
+              </div>
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" data-go="dashboard">Home</button>
+                <button type="button" class="is-active" data-go="chores">Chores</button>
+                <button type="button" data-go="payments">Pay</button>
+                <button type="button" data-go="lists">Lists</button>
+                <button type="button" data-go="calendar">Cal</button>
+              </nav>
+            </section>
+
+            <!-- PAYMENTS -->
+            <section class="screen" data-screen="payments" hidden aria-label="Payments">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Payments</h1>
+                </div>
+                <button type="button" class="wire-btn compact primary">Add</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <div class="app-card static">
+                  <strong>Rent</strong>
+                  <span>$400 each · Due 1st</span>
+                  <em class="status unpaid">Unpaid</em>
+                </div>
+                <div class="app-card static">
+                  <strong>Utilities</strong>
+                  <span>$45 · Shared</span>
+                  <em class="status paid">Paid</em>
+                </div>
+                <div class="hint-card">
+                  Pay through Venmo, then notify the household when it’s done.
+                </div>
+                <div class="auth-actions">
+                  <button type="button" class="wire-btn">Remind</button>
+                  <button type="button" class="wire-btn primary">Mark paid</button>
+                </div>
+              </div>
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" data-go="dashboard">Home</button>
+                <button type="button" data-go="chores">Chores</button>
+                <button type="button" class="is-active" data-go="payments">Pay</button>
+                <button type="button" data-go="lists">Lists</button>
+                <button type="button" data-go="calendar">Cal</button>
+              </nav>
+            </section>
+
+            <!-- LISTS -->
+            <section class="screen" data-screen="lists" hidden aria-label="Shopping and to-do lists">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Lists</h1>
+                </div>
+                <button type="button" class="wire-btn compact primary">Add</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <div class="section-label">
+                  <h2>Shopping</h2>
+                  <span>Shared</span>
+                </div>
+                <label class="task-row">
+                  <input type="checkbox" />
+                  <span>
+                    <strong>Toilet paper</strong>
+                    <small>Marked low by Sam</small>
+                  </span>
+                </label>
+                <label class="task-row">
+                  <input type="checkbox" />
+                  <span>
+                    <strong>Dish soap</strong>
+                    <small>Marked low by You</small>
+                  </span>
+                </label>
+                <label class="task-row done">
+                  <input type="checkbox" checked />
+                  <span>
+                    <strong>Paper towels</strong>
+                    <small>Bought by Alex</small>
+                  </span>
+                </label>
+                <div class="hint-card soft">
+                  Harmony can suggest common essentials for your apartment.
+                </div>
+              </div>
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" data-go="dashboard">Home</button>
+                <button type="button" data-go="chores">Chores</button>
+                <button type="button" data-go="payments">Pay</button>
+                <button type="button" class="is-active" data-go="lists">Lists</button>
+                <button type="button" data-go="calendar">Cal</button>
+              </nav>
+            </section>
+
+            <!-- CALENDAR -->
+            <section class="screen" data-screen="calendar" hidden aria-label="Calendar and parking">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Calendar</h1>
+                </div>
+                <button type="button" class="wire-btn compact primary">Add</button>
+              </div>
+              <div class="wire-body scroll app-content cal-layout">
+                <section class="cal-section">
+                  <div class="section-label">
+                    <h2>Today</h2>
+                    <span>Mon, Sep 28</span>
+                  </div>
+                  <div class="day-events">
+                    <div class="event-block chore">
+                      <span class="event-time">9:00 AM</span>
+                      <div>
+                        <strong>Kitchen wipe-down</strong>
+                        <p>You · Chore</p>
+                      </div>
+                    </div>
+                    <div class="event-block shared">
+                      <span class="event-time">6:00 PM</span>
+                      <div>
+                        <strong>Roommate dinner</strong>
+                        <p>Living room · Sam</p>
+                      </div>
+                    </div>
+                    <div class="event-block parking">
+                      <span class="event-time">8:00 PM</span>
+                      <div>
+                        <strong>Guest parking reserved</strong>
+                        <p>Spot B · You</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="cal-section">
+                  <div class="section-label">
+                    <h2>September 2026</h2>
+                  </div>
+                  <div class="mini-cal" aria-label="September 2026 calendar">
+                    <div class="mini-cal-weekdays">
+                      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                    </div>
+                    <div class="mini-cal-grid">
+                      <span class="empty"></span>
+                      <span class="empty"></span>
+                      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                      <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
+                      <span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span>
+                      <span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span>
+                      <span>27</span><span class="today">28</span><span class="has-event">29</span><span>30</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="cal-section parking-panel">
+                  <div class="section-label">
+                    <h2>Parking</h2>
+                    <button type="button" class="text-action">Request time</button>
+                  </div>
+                  <div class="parking-status">
+                    <div class="parking-spot">
+                      <strong>Spot A</strong>
+                      <span class="tag open">Open tonight</span>
+                    </div>
+                    <div class="parking-spot">
+                      <strong>Spot B</strong>
+                      <span class="tag taken">You · 8–11 PM</span>
+                    </div>
+                  </div>
+                  <div class="hint-card">
+                    If a time conflicts, pick another slot or resolve with your roommate.
+                  </div>
+                </section>
+              </div>
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" data-go="dashboard">Home</button>
+                <button type="button" data-go="chores">Chores</button>
+                <button type="button" data-go="payments">Pay</button>
+                <button type="button" data-go="lists">Lists</button>
+                <button type="button" class="is-active" data-go="calendar">Cal</button>
+              </nav>
+            </section>
+
+            <!-- COMMUNICATION -->
+            <section class="screen" data-screen="comms" hidden aria-label="Organized communication">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Updates</h1>
+                </div>
+                <button type="button" class="wire-btn compact" data-go="dashboard">Done</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <div class="app-card static">
+                  <strong>Chores</strong>
+                  <span>Jordan finished bathroom</span>
+                </div>
+                <div class="app-card static">
+                  <strong>Bills</strong>
+                  <span>Rent reminder · due Fri</span>
+                </div>
+                <div class="app-card static">
+                  <strong>Lists</strong>
+                  <span>Sam added dish soap</span>
+                </div>
+                <div class="hint-card soft">
+                  Updates are grouped by topic and respect your notification preferences.
+                </div>
+              </div>
+            </section>
+
+            <!-- ENGAGEMENT -->
+            <section class="screen" data-screen="engagement" hidden aria-label="Optional engagement">
+              <div class="wire-body auth-body">
+                <div class="auth-card">
+                  <h1 class="auth-title">Fun features?</h1>
+                  <p class="welcome-question subtle">Optional points, streaks, and challenges — they never block chores or bills.</p>
+                  <div class="wire-actions welcome-btns household-choice">
+                    <button type="button" class="wire-btn primary" data-go="overview">Opt in</button>
+                    <button type="button" class="wire-btn" data-go="overview">Not now</button>
+                  </div>
+                  <div class="auth-actions household-cancel">
+                    <button type="button" class="wire-btn" data-go="dashboard">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- OVERVIEW -->
+            <section class="screen" data-screen="overview" hidden aria-label="Shared household overview">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Household</p>
+                  <h1 class="app-title">Overview</h1>
+                </div>
+                <button type="button" class="wire-btn compact" data-go="dashboard">Done</button>
+              </div>
+              <div class="wire-body scroll app-content">
+                <div class="pref-row"><span>Completed tasks</span><strong>3</strong></div>
+                <div class="pref-row"><span>Upcoming</span><strong>5</strong></div>
+                <div class="pref-row"><span>Payments unpaid</span><strong>1</strong></div>
+                <div class="pref-row"><span>Shopping progress</span><strong>2/5</strong></div>
+                <div class="pref-row"><span>Parking reserved</span><strong>1</strong></div>
+                <div class="pref-row"><span>New notifications</span><strong>2</strong></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
