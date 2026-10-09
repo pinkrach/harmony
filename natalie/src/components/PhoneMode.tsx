@@ -11,7 +11,10 @@ export default function PhoneMode({ children }: { children: ReactNode }) {
   const [on, setOn] = useState(() => new URLSearchParams(window.location.search).get('phone') === '1')
   const [start, setStart] = useState(pathname)
   const embedded = window.self !== window.top
-  if (embedded) return <>{children}</>
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(max-width: 699px)').matches
+  if (embedded || standalone) return <>{children}</>
 
   const toggle = () => {
     setStart(pathname)

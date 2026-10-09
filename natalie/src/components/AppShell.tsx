@@ -26,8 +26,9 @@ function Nav() {
 
 export default function AppShell() {
   const { pathname } = useLocation()
+  const home = pathname.startsWith('/app/home')
   return (
-    <div className="app">
+    <div className={home ? 'app app-home' : 'app'}>
       <aside className="sidebar" aria-label="Main">
         <div className="brand">
           <Pip size={40} />
@@ -35,33 +36,50 @@ export default function AppShell() {
         </div>
         <Nav />
         <div className="side-foot">
-          <div className="card tint-yellow flat row">
-            <Flame color="#c25100" aria-hidden />
-            <div>
-              <b>5-day streak!</b>
-              <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>Household chores on time</div>
+          {!home && (
+            <div className="card tint-yellow flat row">
+              <Flame color="#c25100" aria-hidden />
+              <div>
+                <b>5-day streak!</b>
+                <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>Household chores on time</div>
+              </div>
             </div>
-          </div>
-          <Link to="/preferences" className="row card flat" style={{ padding: 10 }}>
-            <Avatar id="you" size={40} />
-            <div className="grow">
-              <b>Natalie</b>
-              <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>Casa Girasol</div>
-            </div>
-          </Link>
+          )}
+          {!home && (
+            <Link to="/preferences" className="row card flat" style={{ padding: 10 }}>
+              <Avatar id="you" size={40} />
+              <div className="grow">
+                <b>Natalie</b>
+                <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>Casa Girasol</div>
+              </div>
+            </Link>
+          )}
         </div>
       </aside>
 
       <div>
         <header className="topbar">
-          <div className="brand">
-            <Pip size={34} />
-            Harmony
-          </div>
-          <span className="grow" />
-          <span className="pill-stat flame"><Flame size={18} aria-hidden />5</span>
-          <span className="pill-stat star"><Star size={18} aria-hidden fill="currentColor" />240</span>
-          <button className="icon-btn" aria-label="Notifications, 3 new"><Bell size={22} aria-hidden /><span className="badge" /></button>
+          {home ? (
+            <>
+              <div className="brand">
+                <Pip size={34} />
+                Harmony
+              </div>
+              <span className="grow" />
+              <p className="house-name">Natalie</p>
+            </>
+          ) : (
+            <>
+              <div className="brand">
+                <Pip size={34} />
+                Harmony
+              </div>
+              <span className="grow" />
+              <span className="pill-stat flame"><Flame size={18} aria-hidden />5</span>
+              <span className="pill-stat star"><Star size={18} aria-hidden fill="currentColor" />240</span>
+              <button className="icon-btn" aria-label="Notifications, 3 new"><Bell size={22} aria-hidden /><span className="badge" /></button>
+            </>
+          )}
         </header>
         <main className="main" key={pathname}>
           <div className="page">

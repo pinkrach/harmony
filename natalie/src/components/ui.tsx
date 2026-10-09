@@ -80,6 +80,7 @@ export function Segmented({ options, initial = 0, onChange }: { options: string[
       {options.map((o, idx) => (
         <button
           key={o}
+          type="button"
           role="tab"
           aria-selected={i === idx}
           onClick={() => {

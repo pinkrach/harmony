@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=chore-arc-v1c" />
   </head>
   <body>
     <div class="stage">
@@ -19,15 +19,21 @@
         <p>Follows the Harmony roommate management workflow</p>
       </header>
 
-      <button type="button" class="skip-to-home" data-go="dashboard">
-        Skip to Home
-      </button>
+      <div class="stage-skips">
+        <button type="button" class="skip-to-home" data-go="dashboard">
+          Skip to Home
+        </button>
+        <button type="button" class="skip-to-home skip-alt" data-go="chores-alt">
+          Chore chart view
+        </button>
+      </div>
 
       <div class="phone-shell">
         <div class="phone" aria-label="Rachel's Version wireframe">
           <div class="phone-notch" aria-hidden="true"></div>
           <div class="phone-home-indicator" aria-hidden="true"></div>
           <div class="phone-screen">
+            <canvas id="confetti-canvas" class="confetti-canvas" aria-hidden="true"></canvas>
             <!-- WELCOME -->
             <section class="screen is-active" data-screen="welcome" aria-label="Get started">
               <div class="wire-body welcome-body">
@@ -323,47 +329,103 @@
             <section class="screen" data-screen="dashboard" hidden aria-label="Household dashboard">
               <div class="app-top">
                 <div>
-                  <p class="app-kicker">Harmony</p>
-                  <h1 class="app-title">Home</h1>
+                  <p class="app-kicker">Maple House</p>
+                  <h1 class="app-title">Today</h1>
                 </div>
-                <button type="button" class="wire-btn compact" data-go="comms">Alerts</button>
+                <button type="button" class="wire-btn compact" data-go="comms">
+                  Alerts
+                  <span class="alert-dot" aria-hidden="true"></span>
+                </button>
               </div>
-              <div class="wire-body scroll app-content">
-                <button type="button" class="app-card" data-go="chores">
-                  <strong>Upcoming chores</strong>
-                  <span>Kitchen · Sun · You</span>
-                </button>
-                <button type="button" class="app-card" data-go="payments">
-                  <strong>Payments</strong>
-                  <span>Rent due · $400 each</span>
-                </button>
-                <button type="button" class="app-card" data-go="lists">
-                  <strong>Lists</strong>
-                  <span>Shopping · 3 items left</span>
-                </button>
-                <button type="button" class="app-card" data-go="calendar">
-                  <strong>Calendar & parking</strong>
-                  <span>Tonight · Spot B reserved</span>
-                </button>
-                <button type="button" class="app-card" data-go="comms">
-                  <strong>Notifications</strong>
-                  <span>2 new updates</span>
-                </button>
-                <button type="button" class="app-card soft" data-go="engagement">
-                  <strong>Fun features</strong>
-                  <span>Optional points & streaks</span>
-                </button>
-                <button type="button" class="app-card soft" data-go="overview">
-                  <strong>Household overview</strong>
-                  <span>Status at a glance</span>
-                </button>
+              <div class="wire-body scroll app-content home-content">
+                <div class="glance-hero">
+                  <p class="glance-label">Your balance</p>
+                  <p class="glance-amount owe">−$62.50</p>
+                  <p class="glance-sub">You owe Sam $45 · Jordan owes you $18</p>
+                </div>
+
+                <div class="glance-grid" aria-label="At a glance">
+                  <div class="glance-tile">
+                    <span class="glance-tile-icon" aria-hidden="true">✓</span>
+                    <span class="glance-tile-label">Chores left</span>
+                    <strong>2</strong>
+                    <span class="glance-tile-meta">this week</span>
+                  </div>
+                  <div class="glance-tile">
+                    <span class="glance-tile-icon" aria-hidden="true">≡</span>
+                    <span class="glance-tile-label">Shopping</span>
+                    <strong>3</strong>
+                    <span class="glance-tile-meta">items low</span>
+                  </div>
+                  <div class="glance-tile warn">
+                    <span class="glance-tile-icon" aria-hidden="true">→</span>
+                    <span class="glance-tile-label">Next up</span>
+                    <strong>Sun</strong>
+                    <span class="glance-tile-meta">Kitchen</span>
+                  </div>
+                  <div class="glance-tile">
+                    <span class="glance-tile-icon" aria-hidden="true">P</span>
+                    <span class="glance-tile-label">Parking</span>
+                    <strong>B</strong>
+                    <span class="glance-tile-meta">8–11 PM</span>
+                  </div>
+                </div>
+
+                <div class="section-label">
+                  <h2>Needs attention</h2>
+                </div>
+                <div class="attention-row">
+                  <span class="attention-mark chore" aria-hidden="true"></span>
+                  <div>
+                    <strong>Kitchen wipe-down</strong>
+                    <small>Due Sunday · yours</small>
+                  </div>
+                </div>
+                <div class="attention-row">
+                  <span class="attention-mark pay" aria-hidden="true"></span>
+                  <div>
+                    <strong>Rent share</strong>
+                    <small>$400 due Fri</small>
+                  </div>
+                </div>
+                <div class="attention-row">
+                  <span class="attention-mark list" aria-hidden="true"></span>
+                  <div>
+                    <strong>Toilet paper low</strong>
+                    <small>Marked by Sam</small>
+                  </div>
+                </div>
+
+                <div class="section-label">
+                  <h2>Just now</h2>
+                  <button type="button" class="text-action" data-go="comms">All</button>
+                </div>
+                <div class="feed-card">
+                  <p class="feed-line">Jordan finished bathroom · 2h ago</p>
+                  <p class="feed-line">Alex bought paper towels · yesterday</p>
+                </div>
               </div>
               <nav class="wire-nav" aria-label="Main">
-                <button type="button" class="is-active" data-go="dashboard">Home</button>
-                <button type="button" data-go="chores">Chores</button>
-                <button type="button" data-go="payments">Pay</button>
-                <button type="button" data-go="lists">Lists</button>
-                <button type="button" data-go="calendar">Cal</button>
+                <button type="button" data-go="chores" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" class="is-active" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
               </nav>
             </section>
 
@@ -371,47 +433,244 @@
             <section class="screen" data-screen="chores" hidden aria-label="Chores">
               <div class="app-top">
                 <div>
-                  <p class="app-kicker">Household</p>
+                  <p class="app-kicker">Yours</p>
                   <h1 class="app-title">Chores</h1>
                 </div>
-                <button type="button" class="wire-btn compact primary">Add</button>
+                <button type="button" class="wheel-fab" id="wheel-open" aria-label="Open chore wheel" aria-expanded="false">
+                  <svg class="wheel-mini" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle cx="32" cy="32" r="30" fill="#eef3f0" stroke="#3f5a4c" stroke-width="2" />
+                    <path d="M32 32 L32 2 A30 30 0 0 1 58.98 47 Z" fill="#5f7d6e" />
+                    <path d="M32 32 L58.98 47 A30 30 0 0 1 5.02 47 Z" fill="#6a8f9a" />
+                    <path d="M32 32 L5.02 47 A30 30 0 0 1 32 2 Z" fill="#b86b3a" />
+                    <circle cx="32" cy="32" r="10" fill="#fbfcfb" stroke="#3f5a4c" stroke-width="1.5" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="wheel-overlay" id="wheel-overlay" hidden>
+                <div class="wheel-sheet">
+                  <div class="wheel-sheet-top">
+                    <div>
+                      <p class="app-kicker">Tap a slice</p>
+                      <h2 class="wheel-sheet-title">Chore wheel</h2>
+                    </div>
+                    <button type="button" class="wire-btn compact" id="wheel-close">Close</button>
+                  </div>
+
+                  <div class="wheel-stage" id="wheel-stage">
+                    <div class="wheel-pointer" aria-hidden="true"></div>
+                    <svg id="chore-wheel" class="chore-wheel" viewBox="0 0 320 320" role="img" aria-label="Chore chart — tap a slice">
+                      <g class="wheel-disk" id="wheel-disk">
+                        <circle cx="160" cy="160" r="148" fill="#fbfcfb" stroke="rgba(36,48,43,0.16)" stroke-width="2" />
+                        <path class="wheel-slice" data-wedge="kitchen" d="M160 160 L160 20 A140 140 0 0 1 280.99 230 Z" fill="#5f7d6e" tabindex="0" role="button" aria-label="Kitchen slice" />
+                        <path class="wheel-slice" data-wedge="bath" d="M160 160 L280.99 230 A140 140 0 0 1 39.01 230 Z" fill="#6a8f9a" tabindex="0" role="button" aria-label="Bath slice" />
+                        <path class="wheel-slice" data-wedge="trash" d="M160 160 L39.01 230 A140 140 0 0 1 160 20 Z" fill="#b86b3a" tabindex="0" role="button" aria-label="Trash slice" />
+                        <g class="wheel-slice-labels" fill="#f7faf8" font-size="15" font-weight="700" text-anchor="middle" pointer-events="none">
+                          <text transform="rotate(-30 160 160) translate(160 88)">Kitchen</text>
+                          <text transform="rotate(90 160 160) translate(160 88)">Bath</text>
+                          <text transform="rotate(210 160 160) translate(160 88)">Trash</text>
+                        </g>
+                        <circle cx="160" cy="160" r="44" fill="#fbfcfb" stroke="#3f5a4c" stroke-width="2" />
+                        <text x="160" y="155" text-anchor="middle" fill="#3f5a4c" font-size="12" font-weight="700" pointer-events="none">Tap</text>
+                        <text x="160" y="172" text-anchor="middle" fill="#5a6b63" font-size="10" pointer-events="none">a slice</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="wheel-legend" id="wheel-legend">
+                    <p class="wheel-prompt">Select Kitchen, Bath, or Trash to see its tasks.</p>
+                  </div>
+
+                  <div class="wheel-detail" id="wheel-detail" hidden>
+                    <div class="section-label">
+                      <h2 id="wheel-detail-title">Kitchen</h2>
+                      <button type="button" class="text-action" id="wheel-detail-back">All slices</button>
+                    </div>
+                    <p class="wheel-detail-meta" id="wheel-detail-meta">Assigned to You</p>
+                    <div class="chore-list" id="wheel-detail-tasks"></div>
+                  </div>
+
+                  <div class="auth-actions wheel-actions">
+                    <button type="button" class="wire-btn" id="wheel-close-secondary">Done</button>
+                    <button type="button" class="wire-btn primary" id="wheel-rotate">Rotate week</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chore-progress" aria-label="Weekly chore progress">
+                <div class="chore-progress-top">
+                  <span>This week</span>
+                  <span id="chore-progress-label">1 of 3</span>
+                </div>
+                <div class="chore-progress-track">
+                  <div id="chore-progress-fill" class="chore-progress-fill" style="width: 33%"></div>
+                </div>
               </div>
               <div class="wire-body scroll app-content">
                 <div class="section-label">
                   <h2>This week</h2>
-                  <button type="button" class="text-action">Rotate</button>
                 </div>
-                <label class="task-row">
-                  <input type="checkbox" />
-                  <span>
-                    <strong>Kitchen wipe-down</strong>
-                    <small>You · Due Sun</small>
-                  </span>
-                </label>
-                <label class="task-row">
-                  <input type="checkbox" />
-                  <span>
-                    <strong>Bathroom clean</strong>
-                    <small>Jordan · Due Sat</small>
-                  </span>
-                </label>
-                <label class="task-row done">
-                  <input type="checkbox" checked />
-                  <span>
-                    <strong>Wipe counters</strong>
-                    <small>Alex · Done</small>
-                  </span>
-                </label>
-                <div class="hint-card">
-                  Overdue chores can send reminders in-app or by text.
+                <div id="chore-this-week" class="chore-list">
+                  <label class="task-row" data-chore data-due="Due Sun · weekly">
+                    <input type="checkbox" />
+                    <span>
+                      <strong>Kitchen wipe-down</strong>
+                      <small>Due Sun · weekly</small>
+                    </span>
+                  </label>
+                  <label class="task-row" data-chore data-due="Due Wed · biweekly">
+                    <input type="checkbox" />
+                    <span>
+                      <strong>Take out recycling</strong>
+                      <small>Due Wed · biweekly</small>
+                    </span>
+                  </label>
                 </div>
+
+                <div class="section-label">
+                  <h2>Next week</h2>
+                  <span>Upcoming</span>
+                </div>
+                <div class="chore-list">
+                  <label class="task-row upcoming">
+                    <input type="checkbox" disabled />
+                    <span>
+                      <strong>Kitchen wipe-down</strong>
+                      <small>Due next Sun</small>
+                    </span>
+                  </label>
+                  <label class="task-row upcoming">
+                    <input type="checkbox" disabled />
+                    <span>
+                      <strong>Vacuum living room</strong>
+                      <small>Due next Sat</small>
+                    </span>
+                  </label>
+                </div>
+
+                <div class="section-label">
+                  <h2>Completed</h2>
+                  <span id="chore-done-count">1</span>
+                </div>
+                <div id="chore-completed" class="chore-list">
+                  <label class="task-row done" data-chore data-due="Due Mon · weekly">
+                    <input type="checkbox" checked />
+                    <span>
+                      <strong>Wipe counters</strong>
+                      <small>Done today</small>
+                    </span>
+                  </label>
+                </div>
+                <p id="chore-empty" class="chore-empty" hidden>Nothing completed yet — check one off above.</p>
               </div>
               <nav class="wire-nav" aria-label="Main">
-                <button type="button" data-go="dashboard">Home</button>
-                <button type="button" class="is-active" data-go="chores">Chores</button>
-                <button type="button" data-go="payments">Pay</button>
-                <button type="button" data-go="lists">Lists</button>
-                <button type="button" data-go="calendar">Cal</button>
+                <button type="button" class="is-active" data-go="chores" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
+              </nav>
+            </section>
+
+            <!-- CHORES ALT — arc / chart view -->
+            <section class="screen" data-screen="chores-alt" hidden aria-label="Chores chart view">
+              <div class="app-top">
+                <div>
+                  <p class="app-kicker">Yours</p>
+                  <h1 class="app-title">Chores</h1>
+                </div>
+                <button type="button" class="wire-btn compact" data-go="chores">List</button>
+              </div>
+              <div class="chore-progress" aria-label="Weekly chore progress">
+                <div class="chore-progress-top">
+                  <span>This week</span>
+                  <span id="chore-alt-progress-label">1 of 3</span>
+                </div>
+                <div class="chore-progress-track">
+                  <div id="chore-alt-progress-fill" class="chore-progress-fill" style="width: 33%"></div>
+                </div>
+              </div>
+
+              <div class="arc-body" id="arc-body">
+                <div class="arc-viewport" id="arc-viewport">
+                  <svg class="arc-wheel" id="arc-wheel" viewBox="0 0 320 320" role="img" aria-label="Chore chart">
+                    <g id="arc-disk">
+                      <circle cx="160" cy="160" r="150" fill="#fbfcfb" />
+                      <path d="M160 160 L160 12 A148 148 0 0 1 288.1 234 Z" fill="#5f7d6e" />
+                      <path d="M160 160 L288.1 234 A148 148 0 0 1 31.9 234 Z" fill="#6a8f9a" />
+                      <path d="M160 160 L31.9 234 A148 148 0 0 1 160 12 Z" fill="#b86b3a" />
+                      <g class="arc-slice-labels" fill="#f7faf8" font-size="16" font-weight="700" text-anchor="middle">
+                        <text transform="rotate(-30 160 160) translate(160 86)">Kitchen</text>
+                        <text transform="rotate(90 160 160) translate(160 86)">Bath</text>
+                        <text transform="rotate(210 160 160) translate(160 86)">Trash</text>
+                      </g>
+                      <g
+                        class="arc-hub-group"
+                        id="arc-hub"
+                        tabindex="0"
+                        role="button"
+                        aria-label="Zoom out to full chore chart"
+                        aria-expanded="false"
+                      >
+                        <circle cx="160" cy="160" r="52" fill="transparent" />
+                        <circle cx="160" cy="160" r="46" fill="#fbfcfb" stroke="#3f5a4c" stroke-width="2.5" />
+                        <text x="160" y="155" text-anchor="middle" fill="#3f5a4c" font-size="12" font-weight="700">Week</text>
+                        <text x="160" y="172" text-anchor="middle" fill="#5a6b63" font-size="10">chart</text>
+                      </g>
+                    </g>
+                  </svg>
+
+                  <div class="arc-focus" id="arc-focus">
+                    <div class="arc-focus-card">
+                      <p class="arc-focus-kicker">Your slice</p>
+                      <h2 class="arc-focus-title">Kitchen</h2>
+                      <p class="arc-focus-copy">Wipe-down · Due Sun</p>
+                      <label class="arc-check">
+                        <input type="checkbox" id="arc-chore-check" />
+                        <span>Mark done</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="arc-hint" id="arc-hint">Prev & next slices peek at the edges · tap Week chart to zoom out</p>
+              </div>
+
+              <nav class="wire-nav" aria-label="Main">
+                <button type="button" class="is-active" data-go="chores-alt" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
               </nav>
             </section>
 
@@ -419,36 +678,116 @@
             <section class="screen" data-screen="payments" hidden aria-label="Payments">
               <div class="app-top">
                 <div>
-                  <p class="app-kicker">Household</p>
-                  <h1 class="app-title">Payments</h1>
+                  <p class="app-kicker">Balances</p>
+                  <h1 class="app-title">Pay</h1>
                 </div>
-                <button type="button" class="wire-btn compact primary">Add</button>
+                <button type="button" class="wire-btn compact primary">+ Expense</button>
               </div>
               <div class="wire-body scroll app-content">
+                <div class="pay-balance">
+                  <div class="pay-balance-col">
+                    <span>You owe</span>
+                    <strong class="owe">$80.50</strong>
+                  </div>
+                  <div class="pay-balance-divider" aria-hidden="true"></div>
+                  <div class="pay-balance-col">
+                    <span>You’re owed</span>
+                    <strong class="owed">$18.00</strong>
+                  </div>
+                </div>
+                <button type="button" class="wire-btn primary settle-btn">Settle up</button>
+
+                <div class="section-label">
+                  <h2>Due soon</h2>
+                </div>
                 <div class="app-card static">
                   <strong>Rent</strong>
-                  <span>$400 each · Due 1st</span>
+                  <span>$400 · Due Fri</span>
                   <em class="status unpaid">Unpaid</em>
                 </div>
-                <div class="app-card static">
-                  <strong>Utilities</strong>
-                  <span>$45 · Shared</span>
-                  <em class="status paid">Paid</em>
+
+                <div class="section-label">
+                  <h2>You owe</h2>
                 </div>
+                <div class="balance-row">
+                  <span class="avatar-dot sam">S</span>
+                  <div>
+                    <strong>Sam</strong>
+                    <small>Groceries + dish soap</small>
+                  </div>
+                  <em class="money owe">$45.00</em>
+                </div>
+                <div class="balance-row">
+                  <span class="avatar-dot jordan">J</span>
+                  <div>
+                    <strong>Jordan</strong>
+                    <small>Utilities share</small>
+                  </div>
+                  <em class="money owe">$35.50</em>
+                </div>
+
+                <div class="section-label">
+                  <h2>Owes you</h2>
+                </div>
+                <div class="balance-row">
+                  <span class="avatar-dot alex">A</span>
+                  <div>
+                    <strong>Alex</strong>
+                    <small>Paper towels run</small>
+                  </div>
+                  <em class="money owed">$18.00</em>
+                </div>
+
+                <div class="section-label">
+                  <h2>Roommates bought</h2>
+                </div>
+                <div class="expense-row">
+                  <div>
+                    <strong>Trader Joe’s haul</strong>
+                    <small>Sam · split 4 ways · today</small>
+                  </div>
+                  <em class="money">$86.40</em>
+                </div>
+                <div class="expense-row">
+                  <div>
+                    <strong>Dish soap + sponges</strong>
+                    <small>Sam · split with you · yesterday</small>
+                  </div>
+                  <em class="money">$12.00</em>
+                </div>
+                <div class="expense-row">
+                  <div>
+                    <strong>Internet bill</strong>
+                    <small>Jordan · household · Mon</small>
+                  </div>
+                  <em class="money">$71.00</em>
+                </div>
+
                 <div class="hint-card">
-                  Pay through Venmo, then notify the household when it’s done.
-                </div>
-                <div class="auth-actions">
-                  <button type="button" class="wire-btn">Remind</button>
-                  <button type="button" class="wire-btn primary">Mark paid</button>
+                  Settle in-app or mark paid after Venmo — Harmony keeps the household ledger clear.
                 </div>
               </div>
               <nav class="wire-nav" aria-label="Main">
-                <button type="button" data-go="dashboard">Home</button>
-                <button type="button" data-go="chores">Chores</button>
-                <button type="button" class="is-active" data-go="payments">Pay</button>
-                <button type="button" data-go="lists">Lists</button>
-                <button type="button" data-go="calendar">Cal</button>
+                <button type="button" data-go="chores" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" class="is-active" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
               </nav>
             </section>
 
@@ -492,11 +831,26 @@
                 </div>
               </div>
               <nav class="wire-nav" aria-label="Main">
-                <button type="button" data-go="dashboard">Home</button>
-                <button type="button" data-go="chores">Chores</button>
-                <button type="button" data-go="payments">Pay</button>
-                <button type="button" class="is-active" data-go="lists">Lists</button>
-                <button type="button" data-go="calendar">Cal</button>
+                <button type="button" data-go="chores" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" class="is-active" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
               </nav>
             </section>
 
@@ -581,11 +935,26 @@
                 </section>
               </div>
               <nav class="wire-nav" aria-label="Main">
-                <button type="button" data-go="dashboard">Home</button>
-                <button type="button" data-go="chores">Chores</button>
-                <button type="button" data-go="payments">Pay</button>
-                <button type="button" data-go="lists">Lists</button>
-                <button type="button" class="is-active" data-go="calendar">Cal</button>
+                <button type="button" data-go="chores" aria-label="Chores">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Chores</span>
+                </button>
+                <button type="button" data-go="lists" aria-label="Lists">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Lists</span>
+                </button>
+                <button type="button" data-go="dashboard" aria-label="Home">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                  <span>Home</span>
+                </button>
+                <button type="button" data-go="payments" aria-label="Pay">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .7 2 2-1 2-2.5 2.2S9.5 13 9.5 14.5 10.8 17 12 17s2-.6 2.5-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Pay</span>
+                </button>
+                <button type="button" class="is-active" data-go="calendar" aria-label="Calendar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>Cal</span>
+                </button>
               </nav>
             </section>
 
@@ -657,6 +1026,6 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=chore-arc-v1b"></script>
   </body>
 </html>
