@@ -1,0 +1,19 @@
+{
+  "name": "Harmony",
+  "short_name": "Harmony",
+  "description": "Chores, bills, groceries, and who’s home.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#7C5CFF",
+  "theme_color": "#7C5CFF",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
