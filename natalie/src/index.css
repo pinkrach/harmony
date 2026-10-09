@@ -211,7 +211,7 @@ a { color: inherit; text-decoration: none; }
 @keyframes ping { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.2); opacity: 0; } }
 @keyframes rise { from { transform: translateY(40px) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
 .pop { animation: pop 0.5s var(--ease-pop) both; animation-delay: calc(var(--i, 0) * 70ms); }
-.page { animation: pop 0.4s var(--ease-pop) both; }
+.page { animation: pop 0.4s var(--ease-pop) backwards; } /* no fill-forwards: keeps fixed FAB anchored to the viewport */
 
 /* Mascot */
 .pip .eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
@@ -507,3 +507,26 @@ a { color: inherit; text-decoration: none; }
   .presence-mobile { display: flex; }
   .gantt-desktop { display: none; }
 }
+
+/* ───────── Payments & Chores polish ───────── */
+.balance .card { display: flex; flex-direction: column; gap: 4px; }
+.balance .card .bubble-ico { margin-bottom: 4px; }
+.balance .card b { font-size: 30px; }
+.bal-label { font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.bill-name { font-weight: 800; font-size: 17px; }
+.bill-sub { font-size: 14px; font-weight: 700; }
+.bill { transition: transform 0.2s var(--ease-pop); }
+.bill:hover { transform: translateY(-2px); }
+.bill-paid, .bill-late { margin-top: 10px; }
+.bill-actions + .bill-late { margin-top: 10px; }
+.btn:disabled { opacity: 0.7; cursor: default; filter: none; transform: none; }
+
+.chore-summary { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.chore-summary .top { display: flex; align-items: center; gap: 12px; }
+.chore-summary .pct { font-family: var(--font-head); font-size: 24px; color: var(--mint-d); }
+@media (prefers-color-scheme: dark) { .chore-summary .pct { color: #7ff0c4; } }
+.task { transition: transform 0.2s var(--ease-pop), background 0.2s; }
+.task:hover { transform: translateY(-2px); }
+.task.done { background: var(--mint-l); border-color: var(--mint); }
+.task .who { flex-wrap: nowrap; white-space: nowrap;} .task .who { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.task.late { background: var(--coral-l); }

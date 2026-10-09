@@ -34,7 +34,7 @@ export function Toggle({ label, defaultOn = false }: { label: string; defaultOn?
 
 const confettiColors = ['#ffd23f', '#ff5c7a', '#7c5cff', '#22c58b', '#3bb2ff']
 
-export function Check({ label, defaultOn = false, xp = 10 }: { label: string; defaultOn?: boolean; xp?: number }) {
+export function Check({ label, defaultOn = false, xp = 10, onToggle }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void }) {
   const [on, setOn] = useState(defaultOn)
   const [burst, setBurst] = useState(0)
   const click = () => {
@@ -43,6 +43,7 @@ export function Check({ label, defaultOn = false, xp = 10 }: { label: string; de
       setTimeout(() => setBurst(0), 1000)
     }
     setOn(!on)
+    onToggle?.()
   }
   return (
     <span className="check-wrap">
