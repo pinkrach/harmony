@@ -613,3 +613,13 @@ select.input { appearance: auto; min-height: 48px; cursor: pointer; }
 .week-arrow:hover { background: var(--brand-l); }
 .week-arrow:active { transform: translateY(-50%) scale(0.92); }
 @media (prefers-color-scheme: dark) { .week-arrow { color: #c9bbff; } }
+
+/* Groceries: change who's getting it + remove */
+.assign-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font-weight: 800; font-size: 13px; cursor: pointer; transition: border-color 0.15s; }
+.assign-btn:hover { border-color: var(--brand); }
+.remove-btn { width: 38px; height: 38px; color: var(--coral-d); flex: none; }
+.remove-btn:hover { background: var(--coral-l); }
+@media (prefers-color-scheme: dark) { .remove-btn { color: var(--coral); } }
+.picker-label { font-weight: 800; font-size: 14px; color: var(--muted); }
+.grocery-empty { margin: 8px 4px; font-weight: 700; }
+@media (max-width: 420px) { .assign-name { display: none; } .assign-btn { padding: 4px; } }
