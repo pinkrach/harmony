@@ -748,3 +748,119 @@ a { color: inherit; text-decoration: none; }
 .pick.emoji[aria-pressed='true'] { background: var(--brand-d); }
 .when-summary { border: 2px solid var(--line-d); color: var(--ink); font-size: 15px; }
 .btn:disabled { opacity: 1; --b: var(--line); --bd: var(--line-d); --fg: color-mix(in srgb, var(--muted), var(--ink) 40%); filter: none; }
+
+/* Popup (used by Shopping "Add item") */
+.modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: rgba(20, 14, 45, 0.5); animation: modal-fade 0.15s ease-out; }
+.modal { width: min(400px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.modal h2 { font-size: 22px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+@keyframes modal-fade { from { opacity: 0; } }
+
+/* Calendar: one combined chart that fits every screen */
+.cal-chart { padding: 14px 14px 12px; }
+.cal-chart .g-hours { display: grid; grid-template-columns: 104px 1fr; }
+.cal-chart .g-hours .hrs { position: relative; display: block; height: 22px; padding: 0; }
+.cal-chart .g-hours .hrs > span { position: absolute; top: 2px; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.cal-chart .g-hours .hrs > span:first-child { transform: none; }
+.cal-chart .g-hours .hrs > span:last-of-type { transform: translateX(-100%); }
+.now-tag { position: absolute; top: 0; transform: translateX(-50%); z-index: 3; padding: 1px 6px; border-radius: 999px; background: var(--coral); color: #fff; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.now-tag.hover { background: var(--ink); color: var(--card); }
+.cal-chart .g-row { grid-template-columns: 104px 1fr; }
+.cal-chart .g-label { gap: 8px; padding: 6px 8px 6px 0; font-size: 14px; position: static; background: none; }
+.g-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-ico { width: 28px; height: 28px; border-radius: 9px; flex: none; }
+.cal-chart .g-track { height: 44px; cursor: copy; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / 6 - 2px), var(--line) calc(100% / 6 - 2px), var(--line) calc(100% / 6)); }
+.cal-chart .g-track:hover { background-color: color-mix(in srgb, var(--brand) 6%, transparent); }
+.cal-chart .g-bar { top: 8px; bottom: 8px; border-radius: 10px; padding: 0 6px; pointer-events: none; }
+.g-bar-text { overflow: hidden; text-overflow: ellipsis; }
+.g-mini { justify-content: center; padding: 0; font-size: 11px; }
+.g-event { color: #06261b; font-size: 11px; }
+.g-event[style*='brand'], .g-event[style*='purple'] { color: #fff; }
+.g-event[style*='yellow'] { color: #3a2a00; }
+.cal-chart .g-now { width: 3px; transform: translateX(-1.5px); z-index: 2; pointer-events: none; }
+.g-hover { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed var(--ink); opacity: 0.45; z-index: 2; pointer-events: none; }
+.cal-chart .legend { margin-top: 12px; }
+.cal-hint { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+.day.today:not([aria-pressed='true']) { border-color: var(--brand); }
+.day.today:not([aria-pressed='true']) small { color: var(--brand-d); }
+.cal-chart .avatar .dot { width: 11px; height: 11px; border-width: 2px; right: -3px; bottom: -3px; }
+@media (max-width: 699px) {
+  .day-strip { gap: 5px; }
+  .day { min-width: 0; padding: 7px 2px; }
+  .day small { font-size: 10px; }
+  .day b { font-size: 18px; }
+  .cal-chart { padding: 12px 10px 10px; }
+  .cal-chart .g-hours, .cal-chart .g-row { grid-template-columns: 86px 1fr; }
+  .cal-chart .g-label { gap: 6px; font-size: 12px; padding-right: 6px; }
+  .cal-chart .g-hours .hrs > span:nth-child(2n) { display: none; }
+  .cal-chart .g-track { height: 38px; }
+  .cal-chart .g-bar { top: 7px; bottom: 7px; border-radius: 8px; }
+  .cal-chart .g-bar-text { display: none; }
+  .cal-chart .g-event .g-bar-text { display: inline; font-size: 10px; }
+}
+
+/* Add-event popup */
+.ev-times { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select.input { appearance: auto; min-height: 48px; cursor: pointer; }
+.ev-who { border: 0; margin: 0; padding: 0; min-width: 0; }
+.ev-who legend { font-weight: 800; font-size: 14px; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.ev-who-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ev-person { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); color: var(--muted); font-weight: 800; font-size: 12px; cursor: pointer; opacity: 0.6; transition: border-color 0.15s, opacity 0.15s; }
+.ev-person[aria-pressed='true'] { border-color: var(--mint); background: var(--mint-l); color: var(--ink); opacity: 1; }
+
+/* Bathroom slots: your editable slot + remove button */
+.slot-wrap { position: relative; display: grid; }
+.slot.open { cursor: pointer; }
+.slot.open:hover { background: color-mix(in srgb, var(--brand) 18%, var(--card)); }
+.slot-x { position: absolute; top: -9px; right: -9px; width: 26px; height: 26px; padding: 0; line-height: 0; border-radius: 50%; display: grid; place-items: center; background: var(--coral); color: #fff; border: 2px solid var(--card); cursor: pointer; z-index: 1; }
+.slot-x svg { display: block; }
+.slot-x:hover { background: var(--coral-d); }
+.slot-x:active { transform: scale(0.92); }
+.slot-action { flex-direction: row; gap: 6px; margin-top: 10px; padding: 8px 14px; font-size: 14px; }
+
+/* Clickable event cards + chart bars */
+.event-btn { width: 100%; text-align: left; color: var(--ink); font: inherit; cursor: pointer; transition: border-color 0.15s, transform 0.08s; }
+.event-btn:hover { border-color: var(--brand); }
+.event-btn:active { transform: translateY(2px); }
+.event-btn .ev-title { display: block; font-weight: 800; font-size: 17px; }
+.event-btn .ev-when { display: block; font-size: 13px; font-weight: 700; }
+.event-btn .ev-people { display: block; margin-top: 8px; }
+.ev-edit { align-self: center; display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 6px 10px; border-radius: 999px; background: var(--brand-l); color: var(--brand-d); font-weight: 800; font-size: 13px; }
+@media (prefers-color-scheme: dark) { .ev-edit { color: #c9bbff; } }
+.cal-chart .g-event { pointer-events: auto; cursor: pointer; z-index: 3; }
+.cal-chart .g-event:hover { filter: brightness(1.08); box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink); }
+.btn.ghost.danger-text { --fg: var(--coral-d); }
+@media (prefers-color-scheme: dark) { .btn.ghost.danger-text { --fg: var(--coral); } }
+
+/* Edit-your-home-times popup */
+.home-range { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: 8px; }
+.home-range .input { min-width: 0; padding-left: 10px; padding-right: 6px; }
+.home-remove { width: 40px; height: 40px; color: var(--coral-d); }
+.cal-chart .slot-action { margin-top: 10px; }
+.slot-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Days strip lives inside the top of the calendar card */
+.week-block { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--line); }
+.week-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 8px; font-size: 14px; }
+.week-today { font-size: 13px; }
+.week-nav { position: relative; }
+.week-nav .day-strip { padding: 2px 16px; overflow: visible; }
+.week-nav .day { border-bottom-width: 3px; padding: 6px 2px; }
+.week-arrow { position: absolute; top: 50%; z-index: 2; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: grid; place-items: center; transform: translateY(-50%); background: var(--card); color: var(--brand-d); border: 2px solid var(--line-d); box-shadow: 0 2px 6px rgba(20, 14, 45, 0.18); cursor: pointer; transition: transform 0.08s, background 0.15s; }
+.week-arrow svg { display: block; }
+.week-arrow.prev { left: -4px; }
+.week-arrow.next { right: -4px; }
+.week-arrow:hover { background: var(--brand-l); }
+.week-arrow:active { transform: translateY(-50%) scale(0.92); }
+@media (prefers-color-scheme: dark) { .week-arrow { color: #c9bbff; } }
+
+/* Groceries: change who's getting it + remove */
+.assign-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font-weight: 800; font-size: 13px; cursor: pointer; transition: border-color 0.15s; }
+.assign-btn:hover { border-color: var(--brand); }
+.remove-btn { width: 38px; height: 38px; color: var(--coral-d); flex: none; }
+.remove-btn:hover { background: var(--coral-l); }
+@media (prefers-color-scheme: dark) { .remove-btn { color: var(--coral); } }
+.picker-label { font-weight: 800; font-size: 14px; color: var(--muted); }
+.grocery-empty { margin: 8px 4px; font-weight: 700; }
+@media (max-width: 420px) { .assign-name { display: none; } .assign-btn { padding: 4px; } }
+
