@@ -7,7 +7,7 @@ const tabs = [
   { to: '/app/home', label: 'Home', icon: Home },
   { to: '/app/chores', label: 'Chores', icon: ClipboardList },
   { to: '/app/payments', label: 'Pay', icon: Wallet },
-  { to: '/app/shopping', label: 'Shop', icon: ShoppingCart },
+  { to: '/app/shopping', label: 'Groceries', icon: ShoppingCart },
   { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
 ]
 
