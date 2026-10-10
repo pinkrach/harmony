@@ -2,13 +2,22 @@ import { useState } from 'react'
 import { AlertTriangle, Bath, Car, Plus } from 'lucide-react'
 import { Avatar, AvatarStack, Chip, PageHead, Segmented } from '../components/ui'
 import { bathroom, byId, hourLabel, presence, roommates } from '../data'
+import { addDays, iso, timeText, useChores } from '../chores'
 
 const START = 6
 const SPAN = 18
 const pct = (h: number) => ((h - START) / SPAN) * 100
 const NOW = 18.5
 
-const days = [['Mon', 29], ['Tue', 30], ['Wed', 1], ['Thu', 2], ['Fri', 3], ['Sat', 4], ['Sun', 5]] as const
+const week = (() => {
+  const monday = addDays(-((new Date().getDay() + 6) % 7))
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return { d: d.toLocaleDateString('en-US', { weekday: 'short' }), n: d.getDate(), date: iso(d) }
+  })
+})()
+const todayIdx = week.findIndex((w) => w.date === iso(new Date()))
 
 function status(id: string) {
   const segs = presence[id]
@@ -118,21 +127,39 @@ function Bathroom() {
   )
 }
 
-function Events() {
+function Events({ date, isToday }: { date: string; isToday: boolean }) {
+  const { chores } = useChores()
   const ev = [
     { time: '6:30', ap: 'pm', t: 'Cook dinner together', who: ['you', 'sofi', 'mara'], c: 'var(--brand)' },
     { time: '9:00', ap: 'pm', t: 'Movie night in the living room', who: ['you', 'diego', 'mara', 'sofi'], c: 'var(--purple)' },
-    { time: '11:00', ap: 'am', t: 'Landlord visit · fix the sink', who: ['you'], c: 'var(--yellow-d)', day: 'Sat' },
+    { time: '11:00', ap: 'am', t: 'Landlord visit · fix the sink', who: ['you'], c: 'var(--yellow-d)' },
   ]
+  const dayChores = chores.filter((c) => c.date === date).sort((a, b) => (a.time || '99').localeCompare(b.time || '99'))
+  const empty = dayChores.length === 0 && !isToday
   return (
     <div className="stack">
-      {ev.map((e, i) => (
-        <div className="card event pop" key={e.t} style={{ '--i': i } as React.CSSProperties}>
-          <div className="time">{e.time}<small>{e.ap}{e.day ? ` · ${e.day}` : ''}</small></div>
+      {dayChores.map((c, i) => {
+        const [t, ap] = c.time ? timeText(c.time).split(' ') : ['All', 'day']
+        return (
+          <div className={`card event pop${c.done ? ' done' : ''}`} key={c.id} style={{ '--i': i } as React.CSSProperties}>
+            <div className="time">{t}<small>{ap}</small></div>
+            <span className="bar" style={{ background: 'var(--mint)' }} />
+            <div className="grow">
+              <div className="ev-title"><span aria-hidden>{c.emoji}</span> {c.t}</div>
+              <div className="row" style={{ marginTop: 8 }}><Avatar id={c.who} size={28} /><span className="muted" style={{ fontWeight: 700, fontSize: 14 }}>{c.who === 'you' ? 'You' : byId(c.who).name}</span></div>
+            </div>
+            <Chip tone="teal">{c.done ? 'Done' : 'Chore'}</Chip>
+          </div>
+        )
+      })}
+      {isToday && ev.map((e, i) => (
+        <div className="card event pop" key={e.t} style={{ '--i': i + dayChores.length } as React.CSSProperties}>
+          <div className="time">{e.time}<small>{e.ap}</small></div>
           <span className="bar" style={{ background: e.c }} />
-          <div className="grow"><div style={{ fontWeight: 800, fontSize: 17 }}>{e.t}</div><div style={{ marginTop: 8 }}><AvatarStack ids={e.who} size={28} /></div></div>
+          <div className="grow"><div className="ev-title">{e.t}</div><div style={{ marginTop: 8 }}><AvatarStack ids={e.who} size={28} /></div></div>
         </div>
       ))}
+      {empty && <div className="more">Nothing planned. Enjoy the quiet day!</div>}
     </div>
   )
 }
@@ -156,23 +183,25 @@ function Parking() {
 
 export default function Calendar() {
   const [tab, setTab] = useState(0)
-  const [day, setDay] = useState(1)
+  const [day, setDay] = useState(Math.max(todayIdx, 0))
+  const { chores } = useChores()
+  const hasChore = (date: string) => chores.some((c) => c.date === date && !c.done)
   return (
     <>
       <PageHead title="Calendar" sub="Who’s home, when" />
       <div className="day-strip">
-        {days.map(([d, n], i) => (
-          <button className="day" key={d} aria-pressed={day === i} onClick={() => setDay(i)}>
-            <small>{d}</small><b>{n}</b>{[1, 5].includes(i) && day !== i ? <span className="pip-dot" /> : <span style={{ height: 6 }} />}
+        {week.map((w, i) => (
+          <button className="day" key={w.date} aria-pressed={day === i} aria-label={`${w.d} ${w.n}${hasChore(w.date) ? ', has chores' : ''}`} onClick={() => setDay(i)}>
+            <small>{w.d}</small><b>{w.n}</b>{hasChore(w.date) ? <span className="pip-dot" style={day === i ? { background: '#fff' } : undefined} /> : <span style={{ height: 6 }} />}
           </button>
         ))}
       </div>
       <Segmented options={['Who’s home', 'Events', 'Parking']} onChange={setTab} />
       <div style={{ height: 16 }} />
       {tab === 0 && <><Timeline /><Bathroom /></>}
-      {tab === 1 && <Events />}
+      {tab === 1 && <Events date={week[day].date} isToday={day === todayIdx} />}
       {tab === 2 && <Parking />}
-      <button className="fab" aria-label="Add event"><Plus size={30} aria-hidden /><span className="fab-label">Add event</span></button>
+      <button className="fab" aria-label="Add event"><Plus size={26} aria-hidden /><span className="fab-label">Add event</span></button>
     </>
   )
 }

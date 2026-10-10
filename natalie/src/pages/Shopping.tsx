@@ -12,7 +12,7 @@ const items = [
 export default function Shopping() {
   return (
     <>
-      <PageHead title="Shopping" />
+      <PageHead title="Groceries" />
       <PipSays mood="wow">Need dish soap? Roomies add it, you tick it off!</PipSays>
 
       <div className="sugg pop" style={{ marginBottom: 16 }}>
@@ -28,7 +28,7 @@ export default function Shopping() {
           </div>
         ))}
       </div>
-      <button className="fab" aria-label="Add item"><Plus size={30} aria-hidden /><span className="fab-label">Add item</span></button>
+      <button className="fab" aria-label="Add grocery"><Plus size={26} aria-hidden /><span className="fab-label">Add grocery</span></button>
     </>
   )
 }

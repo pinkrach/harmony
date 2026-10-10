@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react'
-import { Check as CheckIcon } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { Check as CheckIcon, X } from 'lucide-react'
 import { byId } from '../data'
 import { Pip } from './Pip'
 
@@ -111,6 +112,47 @@ export function PageHead({ title, sub, right }: { title: string; sub?: string; r
         {sub && <p>{sub}</p>}
       </div>
       {right}
+    </div>
+  )
+}
+
+/** Bottom sheet for "add something" flows. Same shell on every tab; `tone` + `icon` tell the tabs apart. */
+export function Sheet({ open, title, icon, tone = 'bg-teal', onClose, children }: { open: boolean; title: string; icon: ReactNode; tone?: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
+    ref.current?.querySelector<HTMLElement>('input, button')?.focus()
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+  if (!open) return null
+  return createPortal(
+    <div className="sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} ref={ref}>
+        <span className="sheet-grip" aria-hidden />
+        <div className="sheet-head">
+          <span className={`bubble-ico ${tone}`}>{icon}</span>
+          <h2 className="grow">{title}</h2>
+          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}><X size={22} aria-hidden /></button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** Circular progress. Reads as a status indicator, not a list card. */
+export function Ring({ value, label, size = 76 }: { value: number; label: string; size?: number }) {
+  const r = 15.9155
+  return (
+    <div className="ring" style={{ width: size, height: size }} role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+      <svg viewBox="0 0 36 36" aria-hidden>
+        <circle className="ring-bg" cx="18" cy="18" r={r} />
+        <circle className="ring-fg" cx="18" cy="18" r={r} strokeDasharray={`${value} ${100 - value}`} />
+      </svg>
+      <span className="ring-text">{label}</span>
     </div>
   )
 }

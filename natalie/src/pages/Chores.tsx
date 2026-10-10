@@ -1,62 +1,110 @@
 import { useState } from 'react'
-import { BellRing, CheckCheck, Plus } from 'lucide-react'
-import { Avatar, Check, Chip, PageHead, PipSays, Progress, Segmented } from '../components/ui'
-import { byId } from '../data'
+import { BellRing, CalendarDays, CheckCheck, ClipboardPlus, Clock, Plus } from 'lucide-react'
+import { Avatar, Check, Chip, PageHead, PipSays, Ring, Segmented, Sheet } from '../components/ui'
+import { byId, roommates } from '../data'
+import { addDays, dayText, dueLabel, isLate, iso, nextSaturday, timeText, useChores, type Chore } from '../chores'
 
-type Chore = { id: number; t: string; emoji: string; who: string; due: string; late?: boolean; chip?: ['' | 'yellow', string]; done: boolean }
+const emojis = ['🗑️', '🍽️', '🛁', '🧹', '🪴', '🧺', '🧽', '🐶']
+const whens = ['Today', 'Tomorrow', 'Weekend', 'Pick date'] as const
+type When = (typeof whens)[number]
 
-const seed: Chore[] = [
-  { id: 1, t: 'Take out the trash', emoji: '🗑️', who: 'you', due: 'Tonight', chip: ['yellow', 'Due soon'], done: false },
-  { id: 2, t: 'Wash the dishes', emoji: '🍽️', who: 'diego', due: 'Yesterday', late: true, done: false },
-  { id: 3, t: 'Clean the bathroom', emoji: '🛁', who: 'mara', due: 'Saturday', chip: ['', 'Later'], done: false },
-  { id: 4, t: 'Vacuum the living room', emoji: '🧹', who: 'sofi', due: 'Today', done: true },
-  { id: 5, t: 'Water the plants', emoji: '🪴', who: 'you', due: 'Today', done: true },
-]
+const dateFor = (w: When, picked: string) => (w === 'Today' ? new Date() : w === 'Tomorrow' ? addDays(1) : w === 'Weekend' ? nextSaturday() : new Date(`${picked}T00:00`))
+
+function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (c: Omit<Chore, 'id' | 'done'>) => void }) {
+  const [t, setT] = useState('')
+  const [emoji, setEmoji] = useState(emojis[0])
+  const [who, setWho] = useState('you')
+  const [when, setWhen] = useState<When>('Today')
+  const [picked, setPicked] = useState(iso(addDays(2)))
+  const [time, setTime] = useState('')
+
+  const date = dateFor(when, picked)
+  const summary = `${dayText(date)}${time ? ` · ${timeText(time)}` : ''}`
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!t.trim() || !picked) return
+    onAdd({ t: t.trim(), emoji, who, date: iso(date), time })
+    setT(''); setEmoji(emojis[0]); setWho('you'); setWhen('Today'); setTime('')
+  }
+  return (
+    <Sheet open={open} title="New chore" icon={<ClipboardPlus aria-hidden />} tone="bg-teal" onClose={onClose}>
+      <form className="stack" style={{ gap: 18 }} onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="chore-name">What needs doing?</label>
+          <input id="chore-name" className="input plain" value={t} onChange={(e) => setT(e.target.value)} placeholder="e.g. Take out the recycling" maxLength={40} />
+        </div>
+        <div className="field">
+          <span className="lbl">Pick an icon</span>
+          <div className="pick-row">
+            {emojis.map((e) => <button type="button" key={e} className="pick emoji" aria-pressed={emoji === e} aria-label={`Icon ${e}`} onClick={() => setEmoji(e)}>{e}</button>)}
+          </div>
+        </div>
+        <div className="field">
+          <span className="lbl">Who’s on it?</span>
+          <div className="pick-row">
+            {roommates.map((r) => <button type="button" key={r.id} className="pick" aria-pressed={who === r.id} onClick={() => setWho(r.id)}><Avatar id={r.id} size={26} />{r.id === 'you' ? 'Me' : r.name}</button>)}
+          </div>
+        </div>
+        <div className="field">
+          <span className="lbl">When?</span>
+          <div className="pick-row">
+            {whens.map((w) => <button type="button" key={w} className="pick" aria-pressed={when === w} onClick={() => setWhen(w)}>{w === 'Pick date' && <CalendarDays size={18} aria-hidden />}{w}</button>)}
+          </div>
+          <div className="when-fields">
+            {when === 'Pick date' && (
+              <label className="when-field"><CalendarDays size={18} aria-hidden /><span className="sr-only">Date</span>
+                <input className="input plain" type="date" value={picked} min={iso(new Date())} onChange={(e) => setPicked(e.target.value)} />
+              </label>
+            )}
+            <label className="when-field"><Clock size={18} aria-hidden /><span className="sr-only">Time (optional)</span>
+              <input className="input plain" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              {time && <button type="button" className="link" onClick={() => setTime('')}>Clear</button>}
+            </label>
+          </div>
+          <p className="when-summary"><b>Due:</b> {picked || when === 'Pick date' ? summary : 'Choose a date'}{!time && <span className="muted"> · add a time if it matters</span>}</p>
+        </div>
+        <button className="btn block" type="submit" disabled={!t.trim() || !picked}><Plus size={20} aria-hidden /> Add chore</button>
+      </form>
+    </Sheet>
+  )
+}
 
 export default function Chores() {
-  const [chores, setChores] = useState(seed)
+  const [sheet, setSheet] = useState(false)
+  const { chores, add, toggle } = useChores()
   const [view, setView] = useState(1)
   const [nudged, setNudged] = useState<number[]>([])
 
-  const toggle = (id: number) => setChores((l) => l.map((c) => (c.id === id ? { ...c, done: !c.done } : c)))
+  const addChore = (c: Omit<Chore, 'id' | 'done'>) => {
+    add(c)
+    setSheet(false)
+  }
   const shown = chores.filter((c) => view === 1 || c.who === 'you')
   const left = shown.filter((c) => !c.done)
   const done = shown.filter((c) => c.done)
   const pct = shown.length ? Math.round((done.length / shown.length) * 100) : 0
 
   const row = (c: Chore, i: number) => (
-    <div key={c.id} className={`card task pop${c.done ? ' done' : ''}${c.late && !c.done ? ' late' : ''}`} style={{ '--i': i, borderColor: c.late && !c.done ? 'var(--coral)' : undefined } as React.CSSProperties}>
+    <div key={c.id} className={`card task pop${c.done ? ' done' : ''}${isLate(c) ? ' late' : ''}`} style={{ '--i': i, borderColor: isLate(c) ? 'var(--coral)' : undefined } as React.CSSProperties}>
       <Check label={`Mark ${c.t} complete`} defaultOn={c.done} onToggle={() => toggle(c.id)} />
       <div className="grow">
         <div className="tt"><span aria-hidden>{c.emoji}</span> {c.t}</div>
-        <div className="who"><Avatar id={c.who} size={24} /><span>{c.who === 'you' ? 'You' : byId(c.who).name} · {c.due}</span></div>
+        <div className="who"><Avatar id={c.who} size={24} /><span>{c.who === 'you' ? 'You' : byId(c.who).name} · {dueLabel(c)}</span></div>
       </div>
       {c.done ? <Chip tone="teal">Done</Chip>
-        : c.late ? <button className="btn sm coral" onClick={() => setNudged((n) => [...n, c.id])} disabled={nudged.includes(c.id)}><BellRing size={16} aria-hidden /> {nudged.includes(c.id) ? 'Sent!' : 'Nudge'}</button>
-        : c.chip && <Chip tone={c.chip[0]}>{c.chip[1]}</Chip>}
+        : isLate(c) ? <button className="btn sm coral" onClick={() => setNudged((n) => [...n, c.id])} disabled={nudged.includes(c.id)}><BellRing size={16} aria-hidden /> {nudged.includes(c.id) ? 'Sent!' : 'Nudge'}</button>
+        : c.date === iso(new Date()) ? <Chip tone="yellow">Due soon</Chip> : <Chip>Later</Chip>}
     </div>
   )
 
   return (
     <>
-      <PageHead title="Chores" sub={`${left.length} left · ${done.length} done`} />
+      <PageHead title="Chores" sub={`${left.length} left · ${done.length} done today`} right={<Ring value={pct} label={`${done.length}/${shown.length}`} />} />
       <PipSays mood={left.length === 0 ? 'cheer' : 'happy'}>
         {left.length === 0 ? 'Everything’s done. Sparkling clean!' : `${left.length} left. Tap a circle when it’s done!`}
       </PipSays>
       <Segmented options={['Mine', 'Everyone']} initial={1} onChange={setView} />
       <div style={{ height: 16 }} />
-
-      <div className="card chore-summary pop">
-        <div className="top">
-          <span className="bubble-ico bg-teal"><CheckCheck aria-hidden /></span>
-          <div className="grow">
-            <div className="card-title">Today’s progress</div>
-            <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>{done.length} of {shown.length} chores done</div>
-          </div>
-          <b className="pct">{pct}%</b>
-        </div>
-        <Progress value={pct} />
-      </div>
 
       <div className="stack">
         {left.map(row)}
@@ -65,7 +113,8 @@ export default function Chores() {
         {done.map((c, i) => row(c, i))}
       </div>
 
-      <button className="fab" aria-label="New chore"><Plus size={30} aria-hidden /><span className="fab-label">New chore</span></button>
+      <button className="fab" aria-label="New chore" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">New chore</span></button>
+      <NewChore open={sheet} onClose={() => setSheet(false)} onAdd={addChore} />
     </>
   )
 }

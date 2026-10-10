@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Bell, CalendarDays, ClipboardList, Flame, Home, ShoppingCart, Star, Wallet } from 'lucide-react'
+import { Bell, CalendarDays, ClipboardList, Flame, Home, Refrigerator, Star, Wallet } from 'lucide-react'
 import { Pip } from './Pip'
 import { Avatar } from './ui'
 
@@ -7,7 +7,7 @@ const tabs = [
   { to: '/app/home', label: 'Home', icon: Home },
   { to: '/app/chores', label: 'Chores', icon: ClipboardList },
   { to: '/app/payments', label: 'Pay', icon: Wallet },
-  { to: '/app/shopping', label: 'Shop', icon: ShoppingCart },
+  { to: '/app/shopping', label: 'Groceries', icon: Refrigerator },
   { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
 ]
 

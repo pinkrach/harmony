@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingCart, Wallet } from 'lucide-react'
+import { Refrigerator, Wallet } from 'lucide-react'
 import { Check } from '../components/ui'
+import { totals, usePayments } from '../payments'
 
 const START = 15
 const HOURS = 4
@@ -27,6 +28,7 @@ const top = (h: number) => `${((h - START) / HOURS) * 100}%`
 const height = (a: number, b: number) => `${((b - a) / HOURS) * 100}%`
 
 export default function Home() {
+  const { owe } = totals(usePayments().bills)
   const [notes, setNotes] = useState(startingNotes)
   const dismiss = (text: string) => setNotes((list) => list.filter((note) => note.text !== text))
 
@@ -35,13 +37,13 @@ export default function Home() {
       <div className="home-pair">
         <Link to="/app/payments" className="tile sky">
           <Wallet aria-hidden />
-          <b>-$49.75</b>
+          <b>{owe > 0 ? `-$${owe.toFixed(2)}` : '$0.00'}</b>
           <span>Wallet · you owe</span>
         </Link>
         <Link to="/app/shopping" className="tile pink">
-          <ShoppingCart aria-hidden />
+          <Refrigerator aria-hidden />
           <b>5</b>
-          <span>Shopping</span>
+          <span>Groceries</span>
         </Link>
       </div>
 
