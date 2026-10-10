@@ -142,17 +142,3 @@ export function Sheet({ open, title, icon, tone = 'bg-teal', onClose, children }
     document.body,
   )
 }
-
-/** Circular progress. Reads as a status indicator, not a list card. */
-export function Ring({ value, label, size = 76 }: { value: number; label: string; size?: number }) {
-  const r = 15.9155
-  return (
-    <div className="ring" style={{ width: size, height: size }} role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-      <svg viewBox="0 0 36 36" aria-hidden>
-        <circle className="ring-bg" cx="18" cy="18" r={r} />
-        <circle className="ring-fg" cx="18" cy="18" r={r} strokeDasharray={`${value} ${100 - value}`} />
-      </svg>
-      <span className="ring-text">{label}</span>
-    </div>
-  )
-}

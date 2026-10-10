@@ -1,4 +1,4 @@
-type Mood = 'happy' | 'wow' | 'cheer'
+export type Mood = 'happy' | 'wow' | 'cheer' | 'sad' | 'meh'
 
 /** Pip — Harmony's little house-shaped mascot. */
 export function Pip({
@@ -39,20 +39,32 @@ export function Pip({
         </>
       ) : (
         <>
-          <g className="eye"><circle cx="42" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 42 : 44} cy="79" r="6.5" fill="#1f2a37" /><circle cx="46" cy="75" r="2.2" fill="#fff" /></g>
-          <g className="eye"><circle cx="78" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 78 : 80} cy="79" r="6.5" fill="#1f2a37" /><circle cx="82" cy="75" r="2.2" fill="#fff" /></g>
+          <g className="eye"><circle cx="42" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 42 : 44} cy={mood === 'sad' ? 82 : 79} r="6.5" fill="#1f2a37" /><circle cx="46" cy="75" r="2.2" fill="#fff" /></g>
+          <g className="eye"><circle cx="78" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 78 : 80} cy={mood === 'sad' ? 82 : 79} r="6.5" fill="#1f2a37" /><circle cx="82" cy="75" r="2.2" fill="#fff" /></g>
         </>
       )}
+      {/* brows + sweat for the grumpy moods */}
+      {mood === 'sad' && (
+        <>
+          <path d="M31 66 53 59M89 66 67 59" fill="none" stroke="#1f2a37" strokeWidth="4" strokeLinecap="round" />
+          <path d="M100 60q7 10 0 15q-7-5 0-15z" fill="#7fd1ff" />
+        </>
+      )}
+      {mood === 'meh' && <path d="M32 63h20M68 63h20" fill="none" stroke="#1f2a37" strokeWidth="4" strokeLinecap="round" />}
       {/* cheeks */}
       <circle cx="28" cy="97" r="6" fill="#ff8a80" opacity="0.7" />
       <circle cx="92" cy="97" r="6" fill="#ff8a80" opacity="0.7" />
       {/* mouth */}
       {mood === 'wow' ? (
         <ellipse cx="60" cy="102" rx="6" ry="8" fill="#1f2a37" />
+      ) : mood === 'sad' ? (
+        <path d="M47 108q13-13 26 0" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
+      ) : mood === 'meh' ? (
+        <path d="M49 104h22" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
       ) : (
         <path d="M48 98q12 14 24 0z" fill="#1f2a37" stroke="#1f2a37" strokeWidth="3" strokeLinejoin="round" />
       )}
-      {mood !== 'wow' && <path d="M54 105q6 4 12 0" fill="none" stroke="#ff8a80" strokeWidth="3" strokeLinecap="round" />}
+      {(mood === 'happy' || mood === 'cheer') && <path d="M54 105q6 4 12 0" fill="none" stroke="#ff8a80" strokeWidth="3" strokeLinecap="round" />}
     </svg>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BellRing, CalendarDays, CheckCheck, ClipboardPlus, Clock, Plus } from 'lucide-react'
-import { Avatar, Check, Chip, PageHead, PipSays, Ring, Segmented, Sheet } from '../components/ui'
+import { Avatar, Check, Chip, PageHead, Segmented, Sheet } from '../components/ui'
+import RoomScene from '../components/RoomScene'
 import { byId, roommates } from '../data'
 import { addDays, dayText, dueLabel, isLate, iso, nextSaturday, timeText, useChores, type Chore } from '../chores'
 
@@ -82,7 +83,6 @@ export default function Chores() {
   const shown = chores.filter((c) => view === 1 || c.who === 'you')
   const left = shown.filter((c) => !c.done)
   const done = shown.filter((c) => c.done)
-  const pct = shown.length ? Math.round((done.length / shown.length) * 100) : 0
 
   const row = (c: Chore, i: number) => (
     <div key={c.id} className={`card task pop${c.done ? ' done' : ''}${isLate(c) ? ' late' : ''}`} style={{ '--i': i, borderColor: isLate(c) ? 'var(--coral)' : undefined } as React.CSSProperties}>
@@ -99,10 +99,8 @@ export default function Chores() {
 
   return (
     <>
-      <PageHead title="Chores" sub={`${left.length} left · ${done.length} done today`} right={<Ring value={pct} label={`${done.length}/${shown.length}`} />} />
-      <PipSays mood={left.length === 0 ? 'cheer' : 'happy'}>
-        {left.length === 0 ? 'Everything’s done. Sparkling clean!' : `${left.length} left. Tap a circle when it’s done!`}
-      </PipSays>
+      <PageHead title="Chores" sub={`${left.length} left · ${done.length} done today`} right={<div className="count" aria-label={`${done.length} of ${shown.length} chores done`}><CheckCheck size={20} aria-hidden /><b>{done.length}</b><span>/{shown.length}</span></div>} />
+      <RoomScene done={done.length} total={shown.length} />
       <Segmented options={['Mine', 'Everyone']} initial={1} onChange={setView} />
       <div style={{ height: 16 }} />
 

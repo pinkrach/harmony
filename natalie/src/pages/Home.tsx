@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Refrigerator, Wallet } from 'lucide-react'
+import { Carrot, Wallet } from 'lucide-react'
 import { Check } from '../components/ui'
 import { totals, usePayments } from '../payments'
 
@@ -41,7 +41,7 @@ export default function Home() {
           <span>Wallet · you owe</span>
         </Link>
         <Link to="/app/shopping" className="tile pink">
-          <Refrigerator aria-hidden />
+          <Carrot aria-hidden />
           <b>5</b>
           <span>Groceries</span>
         </Link>

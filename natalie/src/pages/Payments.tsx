@@ -184,7 +184,7 @@ export default function Payments() {
 
   return (
     <>
-      <PageHead title="Payments" sub="Bills, split fairly" />
+      <PageHead title="Bills" sub="Split fairly, paid back fast" />
       <PipSays mood={owe === 0 ? 'cheer' : 'happy'}>
         {owe > 0 ? `You owe ${money(owe)} this month. Venmo makes it quick!` : owed > 0 ? `Roomies still owe you ${money(owed)}.` : 'You’re all paid up. Roomie of the month!'}
       </PipSays>
