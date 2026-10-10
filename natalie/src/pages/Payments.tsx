@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, BellRing, Check, CheckCircle2, Clock, HandCoins, Plus, ReceiptText, Send, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, BellRing, Check, CheckCircle2, Clock, HandCoins, Plus, ReceiptText, Send, Wallet, X } from 'lucide-react'
 import { Avatar, Chip, PageHead, PipSays, Sheet } from '../components/ui'
 import { byId, roommates } from '../data'
 import { addDays, dayText, iso } from '../chores'
@@ -167,6 +167,8 @@ export default function Payments() {
   const { bills } = usePayments()
   const [sheet, setSheet] = useState(false)
   const [nudged, setNudged] = useState<string[]>([])
+  const [filter, setFilter] = useState<'all' | 'owe' | 'owed'>('all')
+  const toggleFilter = (f: 'owe' | 'owed') => setFilter((cur) => (cur === f ? 'all' : f))
   const nudge = (k: string) => setNudged((n) => (n.includes(k) ? n : [...n, k]))
 
   const { owe, owed } = totals(bills)
@@ -189,22 +191,31 @@ export default function Payments() {
         {owe > 0 ? `You owe ${money(owe)} this month. Venmo makes it quick!` : owed > 0 ? `Roomies still owe you ${money(owed)}.` : 'You’re all paid up. Roomie of the month!'}
       </PipSays>
 
-      <div className="balance pop">
-        <div className="card tint-coral flat">
+      <div className="balance pop" role="group" aria-label="Filter bills">
+        <button type="button" className="card tint-coral flat filter" aria-pressed={filter === 'owe'} onClick={() => toggleFilter('owe')}>
           <span className="bubble-ico bg-coral"><Wallet aria-hidden /></span>
           <span className="bal-label">You owe</span>
           <b>{money(owe)}</b>
-        </div>
-        <div className="card tint-teal flat">
+          <span className="bal-count">{youOweBills.length} {youOweBills.length === 1 ? 'bill' : 'bills'}</span>
+        </button>
+        <button type="button" className="card tint-teal flat filter" aria-pressed={filter === 'owed'} onClick={() => toggleFilter('owed')}>
           <span className="bubble-ico bg-teal"><HandCoins aria-hidden /></span>
           <span className="bal-label">Owed to you</span>
           <b>{money(owed)}</b>
-        </div>
+          <span className="bal-count">{owedBills.length} {owedBills.length === 1 ? 'bill' : 'bills'}</span>
+        </button>
+      </div>
+      <div className="filter-hint">
+        {filter === 'all'
+          ? <span className="muted">Tap a card to see only those bills</span>
+          : <button type="button" className="chip purple clear-filter" onClick={() => setFilter('all')}>Showing {filter === 'owe' ? 'what you owe' : 'what you’re owed'} <X size={14} aria-hidden /> <span className="sr-only">Show all bills</span></button>}
       </div>
 
-      {section('You owe', <ArrowUpRight size={20} aria-hidden />, youOweBills, 'owe')}
-      {section('Owed to you', <ArrowDownLeft size={20} aria-hidden />, owedBills, 'owed')}
-      {section('Settled', <CheckCircle2 size={20} aria-hidden />, settled, 'settled')}
+      {filter !== 'owed' && section('You owe', <ArrowUpRight size={20} aria-hidden />, youOweBills, 'owe')}
+      {filter !== 'owe' && section('Owed to you', <ArrowDownLeft size={20} aria-hidden />, owedBills, 'owed')}
+      {filter === 'all' && section('Settled', <CheckCircle2 size={20} aria-hidden />, settled, 'settled')}
+      {filter === 'owe' && youOweBills.length === 0 && <div className="more">🎉 You don’t owe anything right now.</div>}
+      {filter === 'owed' && owedBills.length === 0 && <div className="more">Nobody owes you anything right now.</div>}
 
       <button className="fab" aria-label="Add bill" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">Add bill</span></button>
       <NewBill open={sheet} onClose={() => setSheet(false)} />
