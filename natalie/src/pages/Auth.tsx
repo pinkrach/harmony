@@ -1,31 +1,32 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, ClipboardList, Lock, Mail, User, Wallet } from 'lucide-react'
+import { Lock, Mail, User } from 'lucide-react'
 import { Pip } from '../components/Pip'
-import { Segmented } from '../components/ui'
+
+type Step = 'choose' | 'login' | 'signup'
 
 export default function Auth() {
   const nav = useNavigate()
-  const [signup, setSignup] = useState(false)
+  const [step, setStep] = useState<Step>('choose')
+  const signup = step === 'signup'
 
   return (
-    <div className="auth">
-      <section className="auth-hero">
-        <Pip size={150} mood="happy" wave float />
-        <h1>Harmony</h1>
-        <p>Chores, bills, groceries and who’s home — all in one happy place.</p>
-        <div className="perks">
-          <div className="perk"><ClipboardList aria-hidden /> Fair chore rotations</div>
-          <div className="perk"><Wallet aria-hidden /> Split bills, pay with Venmo</div>
-          <div className="perk"><CalendarDays aria-hidden /> See who’s home, claim the bathroom</div>
+    <div className={`auth-gate${step === 'choose' ? '' : ' is-form'}`}>
+      {step !== 'choose' && (
+        <button type="button" className="auth-back" onClick={() => setStep('choose')}>Back</button>
+      )}
+      <div className="auth-mark">
+        <Pip size={140} mood="happy" wave />
+      </div>
+
+      {step === 'choose' ? (
+        <div className="auth-gate-actions">
+          <button type="button" className="btn block yellow" onClick={() => setStep('login')}>Log in</button>
+          <button type="button" className="btn block gate-signup" onClick={() => setStep('signup')}>Sign up</button>
         </div>
-      </section>
-
-      <section className="auth-panel">
-        <form className="auth-form" onSubmit={(e) => { e.preventDefault(); nav('/household') }}>
-          <Segmented options={['Log in', 'Sign up']} onChange={(i) => setSignup(i === 1)} />
+      ) : (
+        <form key={step} className="auth-form auth-open" onSubmit={(e) => { e.preventDefault(); nav(signup ? '/household?from=signup' : '/house') }}>
           <h2>{signup ? 'Create your account' : 'Welcome back!'}</h2>
-
           {signup && (
             <div className="field">
               <label htmlFor="name">Your name</label>
@@ -40,15 +41,11 @@ export default function Auth() {
             <label htmlFor="pw">Password</label>
             <div className="input-wrap"><Lock size={20} className="icon" aria-hidden /><input id="pw" type="password" className="input" placeholder="••••••••" autoComplete={signup ? 'new-password' : 'current-password'} /></div>
           </div>
-          {!signup && <button type="button" className="link" style={{ alignSelf: 'flex-end' }}>Forgot password?</button>}
-
-          <button type="submit" className="btn block">{signup ? 'Create account' : 'Log in'}</button>
-          <p className="muted" style={{ textAlign: 'center', fontWeight: 700 }}>
-            {signup ? 'Already have an account? ' : 'New to Harmony? '}
-            <button type="button" className="link" onClick={() => setSignup(!signup)}>{signup ? 'Log in' : 'Sign up'}</button>
-          </p>
+          <button type="submit" className="btn block yellow">{signup ? 'Create account' : 'Log in'}</button>
         </form>
-      </section>
+      )}
+
+      {step === 'login' && <button type="button" className="link auth-forgot">Forgot password?</button>}
     </div>
   )
 }

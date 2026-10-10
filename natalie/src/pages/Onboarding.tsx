@@ -1,16 +1,33 @@
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Bell, CalendarDays, Car, ClipboardList, Copy, DoorOpen, Home, Mail, MessageSquare, Plus, Smartphone, Sparkles, Trophy, Wallet } from 'lucide-react'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Bell, CalendarDays, Car, ClipboardList, Copy, DoorOpen, Home, Mail, MessageSquare, Smartphone, Sparkles, Trophy, Wallet } from 'lucide-react'
 import { Pip } from '../components/Pip'
 import { Avatar, Chip, Progress, Segmented, Toggle } from '../components/ui'
 
-function Step({ step, back, say, mood = 'happy', children, cta, to }: { step: number; back: string; say: string; mood?: 'happy' | 'wow' | 'cheer'; children: ReactNode; cta: string; to: string }) {
+const HOUSE_KEY = 'harmony-house'
+const HOUSE_CODE = 'GIR-4821'
+
+type HouseSetup = { mode: 'join' | 'create'; name: string; from: string; code?: string }
+
+function saveHouse(setup: HouseSetup) {
+  sessionStorage.setItem(HOUSE_KEY, JSON.stringify(setup))
+}
+
+function loadHouse(): HouseSetup {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(HOUSE_KEY) || '')
+    if (saved?.mode === 'join' || saved?.mode === 'create') return saved
+  } catch { /* use the sample house */ }
+  return { mode: 'join', name: 'Casa Girasol', from: '/login' }
+}
+
+function Step({ step, total = 3, back, say, mood = 'happy', children, cta, to, onCta, cancel, ctaDisabled }: { step: number; total?: number; back: string; say: string; mood?: 'happy' | 'wow' | 'cheer'; children: ReactNode; cta?: string; to?: string; onCta?: () => void; cancel?: () => void; ctaDisabled?: boolean }) {
   const nav = useNavigate()
   return (
     <div className="ob">
       <div className="ob-top">
         <button className="ob-back" aria-label="Back" onClick={() => nav(back)}><ArrowLeft aria-hidden /></button>
-        <Progress value={(step / 3) * 100} />
+        <Progress value={(step / total) * 100} />
       </div>
       <div className="ob-body page">
         <div className="ob-speech">
@@ -19,17 +36,57 @@ function Step({ step, back, say, mood = 'happy', children, cta, to }: { step: nu
         </div>
         {children}
       </div>
-      <div className="ob-foot">
-        <button className="btn block" onClick={() => nav(to)}>{cta}</button>
-      </div>
+      {(cta || cancel) && (
+        <div className="ob-foot" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {cta && (
+            <button className="btn block" disabled={ctaDisabled} onClick={() => { if (!ctaDisabled) (onCta ? onCta() : nav(to || '/')) }}>{cta}</button>
+          )}
+          {cancel && <button type="button" className="btn block ghost" onClick={cancel}>Cancel</button>}
+        </div>
+      )}
     </div>
   )
 }
 
-export function Household() {
-  const [mode, setMode] = useState<'join' | 'create'>('join')
+export function HouseChoice() {
+  const nav = useNavigate()
+  const [stay, setStay] = useState(true)
   return (
-    <Step step={1} back="/login" say="Let’s find your home!" cta="Continue" to="/invite">
+    <Step step={1} back="/login" say="You’re already in a house." cta="Continue" onCta={() => nav(stay ? '/app/home' : '/household?from=login')}>
+      <button className="choice" aria-pressed={stay} onClick={() => setStay(true)}>
+        <span className="ico bg-teal"><Home size={28} aria-hidden /></span>
+        <span><b>Stay in this house</b><span className="d">Casa Girasol</span></span>
+      </button>
+      <button className="choice" aria-pressed={!stay} onClick={() => setStay(false)}>
+        <span className="ico bg-yellow"><DoorOpen size={28} aria-hidden /></span>
+        <span><b>Select a new house</b><span className="d">Join or create a different one</span></span>
+      </button>
+    </Step>
+  )
+}
+
+export function Household() {
+  const nav = useNavigate()
+  const [params] = useSearchParams()
+  const from = params.get('from') === 'login' ? 'login' : 'signup'
+  const [mode, setMode] = useState<'join' | 'create'>('join')
+  const [name, setName] = useState('')
+
+  const continueOn = () => {
+    if (mode === 'join') {
+      nav(`/join?from=${from}`)
+      return
+    }
+    saveHouse({
+      mode,
+      name: name.trim() || 'New house',
+      from,
+    })
+    nav('/invite')
+  }
+
+  return (
+    <Step step={from === 'login' ? 2 : 1} back={from === 'login' ? '/house' : '/login'} say="Join a house or start a new one." cta="Continue" onCta={continueOn}>
       <button className="choice" aria-pressed={mode === 'join'} onClick={() => setMode('join')}>
         <span className="ico bg-teal"><DoorOpen size={28} aria-hidden /></span>
         <span><b>Join a household</b><span className="d">Your roommate shared a code</span></span>
@@ -38,52 +95,113 @@ export function Household() {
         <span className="ico bg-yellow"><Home size={28} aria-hidden /></span>
         <span><b>Create a household</b><span className="d">Start fresh and invite everyone</span></span>
       </button>
-      {mode === 'join' ? (
-        <div className="field pop">
-          <label htmlFor="code">Household code</label>
-          <input id="code" className="input plain code-input" placeholder="ABC123" maxLength={6} />
-        </div>
-      ) : (
+      {mode === 'create' && (
         <div className="field pop">
           <label htmlFor="hname">Household name</label>
-          <input id="hname" className="input plain" placeholder="Casa Girasol" />
+          <input id="hname" className="input plain" placeholder="Casa Girasol" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
       )}
     </Step>
   )
 }
 
-export function Invite() {
+const FOUND_HOUSE = 'Casa Girasol'
+
+export function JoinHousehold() {
+  const nav = useNavigate()
+  const [params] = useSearchParams()
+  const from = params.get('from') === 'login' ? 'login' : 'signup'
+  const [code, setCode] = useState(params.get('code') || '')
+  const trimmed = code.trim()
+
+  const continueOn = () => {
+    if (!trimmed) return
+    nav(`/join/confirm?from=${from}&code=${encodeURIComponent(trimmed)}`)
+  }
+
   return (
-    <Step step={2} back="/household" say="Bring your roomies in!" mood="cheer" cta="Continue" to="/preferences">
+    <Step step={from === 'login' ? 3 : 2} total={5} back={`/household?from=${from}`} say="Enter the household code." cta="Continue" onCta={continueOn} ctaDisabled={!trimmed}>
+      <div className="field">
+        <label htmlFor="hcode">Household code</label>
+        <input id="hcode" className="input plain" placeholder="GIR-4821" value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="characters" />
+      </div>
+    </Step>
+  )
+}
+
+export function JoinConfirm() {
+  const nav = useNavigate()
+  const [params] = useSearchParams()
+  const from = params.get('from') === 'login' ? 'login' : 'signup'
+  const code = (params.get('code') || '').trim()
+
+  const cancel = () => nav(`/join?from=${from}&code=${encodeURIComponent(code)}`)
+  const confirm = () => {
+    saveHouse({ mode: 'join', name: FOUND_HOUSE, code, from })
+    nav('/invite')
+  }
+
+  if (!code) return <Navigate to={`/join?from=${from}`} replace />
+
+  return (
+    <Step step={from === 'login' ? 4 : 3} total={5} back={`/join?from=${from}&code=${encodeURIComponent(code)}`} say="Is this your house?" cta="Confirm" onCta={confirm} cancel={cancel}>
       <div className="card tint-teal">
-        <div className="muted" style={{ fontWeight: 800, fontSize: 13 }}>YOUR HOUSEHOLD CODE</div>
+        <div className="muted" style={{ fontWeight: 800, fontSize: 13 }}>{code.toUpperCase()}</div>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 32, fontWeight: 700 }}>{FOUND_HOUSE}</div>
+      </div>
+    </Step>
+  )
+}
+
+const joined = [
+  { id: 'sofi', name: 'Sofi' },
+  { id: 'diego', name: 'Diego' },
+  { id: 'mara', name: 'Mara' },
+]
+
+export function Invite() {
+  const setup = loadHouse()
+  const joining = setup.mode === 'join'
+  const code = joining && setup.code ? setup.code : HOUSE_CODE
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(code) } catch { /* still show it was copied */ }
+    setCopied(true)
+  }
+  const from = setup.from === 'login' ? 'login' : 'signup'
+  const householdBack = `/household?from=${from}`
+  const back = joining ? `/join/confirm?from=${from}&code=${encodeURIComponent(setup.code || '')}` : householdBack
+
+  return (
+    <Step step={setup.from === 'login' ? (joining ? 5 : 3) : (joining ? 4 : 2)} total={joining ? 5 : 3} back={back} say={joining ? 'You’re in. Here’s who is already here.' : 'Your house is ready.'} mood="cheer" cta={setup.from === 'login' ? 'Open Harmony' : 'Continue'} to={setup.from === 'login' ? '/app/home' : '/preferences'}>
+      <div className="card tint-teal">
+        <div className="muted" style={{ fontWeight: 800, fontSize: 13 }}>{setup.name.toUpperCase()}</div>
         <div className="row between">
-          <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, letterSpacing: 6, fontWeight: 700 }}>GIR-4821</span>
-          <button className="btn sm ghost"><Copy size={16} aria-hidden /> Copy</button>
+          <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, letterSpacing: 6, fontWeight: 700 }}>{code.toUpperCase()}</span>
+          <button type="button" className="btn sm ghost" onClick={copy}><Copy size={16} aria-hidden /> {copied ? 'Copied' : 'Copy'}</button>
         </div>
       </div>
+
       <div>
-        <div className="section-head"><h2>Send an invite</h2></div>
-        <Segmented options={['In app', 'Text', 'Email']} />
-        <div className="row" style={{ marginTop: 12 }}>
-          <input className="input plain" placeholder="Phone or email" aria-label="Phone or email" />
-          <button className="btn sm yellow" aria-label="Add"><Plus size={20} aria-hidden /></button>
-        </div>
-      </div>
-      <div className="card flat stack">
-        {[
-          ['sofi', 'Sofi', 'Joined', 'teal'],
-          ['diego', 'Diego', 'Invited by text', 'yellow'],
-          ['mara', 'Mara', 'Invited by email', 'yellow'],
-        ].map(([id, name, status, tone]) => (
-          <div className="row" key={id}>
-            <Avatar id={id} />
-            <b className="grow">{name}</b>
-            <Chip tone={tone as 'teal' | 'yellow'}>{status}</Chip>
+        <div className="section-head"><h2>{setup.mode === 'join' ? 'Already signed up' : 'Roommates'}</h2></div>
+        {setup.mode === 'join' ? (
+          <div className="card flat stack">
+            {joined.map((person) => (
+              <div className="row" key={person.id}>
+                <Avatar id={person.id} />
+                <b className="grow">{person.name}</b>
+                <Chip tone="teal">Joined</Chip>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          <div className="card flat">
+            <p className="muted" style={{ fontWeight: 700 }}>No roommates yet. You’re the first one here.</p>
+          </div>
+        )}
       </div>
+
+      <p className="muted" style={{ fontWeight: 700 }}>You can send this code to roommates later in the app.</p>
     </Step>
   )
 }
@@ -96,8 +214,9 @@ const prefs = [
 ]
 
 export function Preferences() {
+  const joining = loadHouse().mode === 'join'
   return (
-    <Step step={3} back="/invite" say="Make it yours!" mood="wow" cta="Open Harmony" to="/app/home">
+    <Step step={joining ? 5 : 3} total={joining ? 5 : 3} back="/invite" say="Make it yours!" mood="wow" cta="Open Harmony" to="/app/home">
       <div className="card flat stack">
         {prefs.map(({ icon: I, tone, t, d, on }) => (
           <div className="row" key={t}>
