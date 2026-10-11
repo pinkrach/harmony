@@ -22,13 +22,19 @@ const houseMood = (done: number, total: number): Mood => {
   return 'cheer'
 }
 
+const quote = (name: string) => `“${name}”`
+const quoteList = (names: string[]) => {
+  const quoted = names.map(quote)
+  if (quoted.length <= 1) return quoted[0] ?? ''
+  if (quoted.length === 2) return `${quoted[0]} and ${quoted[1]}`
+  return `${quoted.slice(0, -1).join(', ')}, and ${quoted[quoted.length - 1]}`
+}
+
 function unhappyWhy(chores: Chore[]): string | null {
   const late = chores.filter(isLate)
   const left = chores.filter((c) => !c.done)
-  if (late.length === 1) return `${late[0].t} is late.`
-  if (late.length > 1) return `${late.length} chores are late.`
-  if (left.length === 1) return `${left[0].t} still needs doing.`
-  if (left.length > 1) return `${left.length} chores still need doing.`
+  if (late.length) return `${quoteList(late.map((c) => c.t))} ${late.length === 1 ? 'is' : 'are'} late.`
+  if (left.length) return `${quoteList(left.map((c) => c.t))} still ${left.length === 1 ? 'needs' : 'need'} doing.`
   return null
 }
 
