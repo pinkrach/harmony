@@ -9,11 +9,13 @@ import Payments from './pages/Payments'
 import Shopping from './pages/Shopping'
 import Calendar from './pages/Calendar'
 import { ChoresProvider } from './chores'
+import { GroceriesProvider } from './groceries'
 import { PaymentsProvider } from './payments'
 
 export default function App() {
   return (
     <ChoresProvider>
+    <GroceriesProvider>
     <PaymentsProvider>
     <Routes>
       <Route path="/" element={<Splash />} />
@@ -36,6 +38,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </PaymentsProvider>
+    </GroceriesProvider>
     </ChoresProvider>
   )
 }

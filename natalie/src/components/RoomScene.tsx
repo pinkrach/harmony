@@ -12,7 +12,7 @@ const message = (removed: number) =>
   : 'Sparkling clean! Nice work, team.'
 
 /** Living room that gets cleaner as chores are completed. */
-export default function RoomScene({ done, total }: { done: number; total: number }) {
+export default function RoomScene({ done, total, bare = false }: { done: number; total: number; bare?: boolean }) {
   const p = total ? done / total : 1
   const removed = Math.min(N, Math.round(p * N))
   const clean = removed / N
@@ -20,14 +20,17 @@ export default function RoomScene({ done, total }: { done: number; total: number
   const spark = removed === N
 
   return (
-    <figure className={`room${spark ? ' spark' : ''}`} style={{ '--clean': clean } as CSSProperties}>
+    <figure className={`room${spark ? ' spark' : ''}${bare ? ' bare' : ''}`} style={{ '--clean': clean } as CSSProperties}>
       <div className="room-stage">
       <svg viewBox="0 0 400 200" role="img" aria-label={`Living room, ${done} of ${total} chores done. ${message(removed)}`}>
-        {/* room */}
-        <rect width="400" height="146" fill="#cdbfff" />
-        <rect y="136" width="400" height="10" fill="#ffffff" opacity=".55" />
-        <rect y="146" width="400" height="54" fill="#e8c79a" />
-        <path d="M0 166H400M0 185H400" stroke="#d6b087" strokeWidth="2" />
+        {!bare && (
+          <>
+            <rect width="400" height="146" fill="#cdbfff" />
+            <rect y="136" width="400" height="10" fill="#ffffff" opacity=".55" />
+            <rect y="146" width="400" height="54" fill="#e8c79a" />
+            <path d="M0 166H400M0 185H400" stroke="#d6b087" strokeWidth="2" />
+          </>
+        )}
 
         {/* window */}
         <rect x="36" y="22" width="86" height="84" rx="6" fill="#fff" />
@@ -104,8 +107,7 @@ export default function RoomScene({ done, total }: { done: number; total: number
           <rect x="116" y="164" width="9" height="13" rx="2" fill="#ff5c7a" transform="rotate(24 120 170)" />
         </g>
 
-        {/* grime + dust fade out as it gets clean */}
-        <rect width="400" height="200" fill="#6b5a2f" className="fade-dirty" opacity=".3" />
+        {!bare && <rect width="400" height="200" fill="#6b5a2f" className="fade-dirty" opacity=".3" />}
         <g className="fade-dirty" fill="#fff">
           <circle className="mote m1" cx="90" cy="120" r="2.5" />
           <circle className="mote m2" cx="240" cy="70" r="2" />
@@ -124,7 +126,7 @@ export default function RoomScene({ done, total }: { done: number; total: number
         <Pip size={64} mood={pipMood(removed)} wave={spark} float={spark} />
       </div>
       </div>
-      <figcaption className="room-cap">{message(removed)}</figcaption>
+      {!bare && <figcaption className="room-cap">{message(removed)}</figcaption>}
     </figure>
   )
 }

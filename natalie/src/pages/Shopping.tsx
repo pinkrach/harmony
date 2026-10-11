@@ -1,31 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { Plus, ShoppingBasket, Trash2 } from 'lucide-react'
 import { Avatar, Check, PageHead, PipSays } from '../components/ui'
 import { byId, roommates } from '../data'
+import { useGroceries, type Item } from '../groceries'
 
-type Item = { id: string; n: string; who: string }
-
-const ITEMS_KEY = 'harmony.groceries'
 const ME = 'you' // the logged-in roommate (Natalie) in this prototype
-
-const startingItems: Item[] = [
-  { id: 'g1', n: 'Oat milk', who: 'diego' },
-  { id: 'g2', n: 'Eggs', who: 'you' },
-  { id: 'g3', n: 'Spinach', who: 'mara' },
-  { id: 'g4', n: 'Dish soap', who: 'sofi' },
-  { id: 'g5', n: 'Bananas', who: 'mara' },
-]
-
-function loadItems(): Item[] {
-  try {
-    const saved = sessionStorage.getItem(ITEMS_KEY)
-    if (saved) return JSON.parse(saved) as Item[]
-  } catch { /* storage unavailable */ }
-  return startingItems
-}
-
-const newId = () => `g${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
 /** Row of roommate avatars to pick who is getting an item. */
 function WhoPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
@@ -100,18 +81,49 @@ function AssignPopup({ item, onSave, onClose }: { item: Item; onSave: (who: stri
   )
 }
 
-export default function Shopping() {
-  const [items, setItems] = useState<Item[]>(loadItems)
-  const [adding, setAdding] = useState(false)
+export function GroceryList() {
+  const { items, remove, assign, toggle } = useGroceries()
   const [assigning, setAssigning] = useState<Item | null>(null)
 
-  const save = (next: Item[]) => {
-    setItems(next)
-    try { sessionStorage.setItem(ITEMS_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
-  }
-  const addItem = (n: string, who: string) => { save([...items, { id: newId(), n, who }]); setAdding(false) }
-  const removeItem = (id: string) => save(items.filter((it) => it.id !== id))
-  const assign = (id: string, who: string) => { save(items.map((it) => (it.id === id ? { ...it, who } : it))); setAssigning(null) }
+  return (
+    <>
+      <div className="card pop" style={{ '--i': 1 } as React.CSSProperties}>
+        {items.length === 0 ? (
+          <p className="muted grocery-empty">The list is empty. Tap “Add item” to add something.</p>
+        ) : (
+          items.map((it) => (
+            <div className={`shop-item${it.bought ? ' done' : ''}`} key={it.id}>
+              <Check label={`Mark ${it.n} purchased`} xp={5} defaultOn={it.bought} onToggle={() => toggle(it.id)} />
+              <div className="grow nm">{it.n}</div>
+              <button type="button" className="assign-btn" onClick={() => setAssigning(it)} aria-label={`${byId(it.who).name} is getting ${it.n}. Change who`} title="Change who’s getting it">
+                <Avatar id={it.who} size={28} />
+                <span className="assign-name">{byId(it.who).name}</span>
+              </button>
+              <button type="button" className="icon-btn remove-btn" onClick={() => remove(it.id)} aria-label={`Remove ${it.n} from the list`} title="Remove from list">
+                <Trash2 size={18} aria-hidden />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+      {assigning && <AssignPopup key={assigning.id} item={assigning} onSave={(who) => { assign(assigning.id, who); setAssigning(null) }} onClose={() => setAssigning(null)} />}
+    </>
+  )
+}
+
+export default function Shopping() {
+  const { items, add } = useGroceries()
+  const [params, setParams] = useSearchParams()
+  const [adding, setAdding] = useState(params.get('add') === '1')
+  useEffect(() => {
+    if (params.get('add') !== '1') return
+    setAdding(true)
+    const next = new URLSearchParams(params)
+    next.delete('add')
+    setParams(next, { replace: true })
+  }, [params, setParams])
+
+  const addItem = (n: string, who: string) => { add(n, who); setAdding(false) }
 
   // Quick-add chips only show for things that aren't already on the list.
   const suggestions = ['Paper towels', 'Toilet paper', 'Sponges'].filter((s) => !items.some((it) => it.n.toLowerCase() === s.toLowerCase()))
@@ -124,36 +136,17 @@ export default function Shopping() {
       {suggestions.length > 0 && (
         <div className="sugg pop" style={{ marginBottom: 16 }}>
           {suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => save([...items, { id: newId(), n: s, who: ME }])} aria-label={`Add ${s} to the list`}>
+            <button key={s} type="button" onClick={() => add(s, ME)} aria-label={`Add ${s} to the list`}>
               <Plus size={16} aria-hidden /> {s}
             </button>
           ))}
         </div>
       )}
 
-      <div className="card pop" style={{ '--i': 1 } as React.CSSProperties}>
-        {items.length === 0 ? (
-          <p className="muted grocery-empty">The list is empty. Tap “Add item” to add something.</p>
-        ) : (
-          items.map((it) => (
-            <div className="shop-item" key={it.id}>
-              <Check label={`Mark ${it.n} purchased`} xp={5} />
-              <div className="grow nm">{it.n}</div>
-              <button type="button" className="assign-btn" onClick={() => setAssigning(it)} aria-label={`${byId(it.who).name} is getting ${it.n}. Change who`} title="Change who’s getting it">
-                <Avatar id={it.who} size={28} />
-                <span className="assign-name">{byId(it.who).name}</span>
-              </button>
-              <button type="button" className="icon-btn remove-btn" onClick={() => removeItem(it.id)} aria-label={`Remove ${it.n} from the list`} title="Remove from list">
-                <Trash2 size={18} aria-hidden />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
+      <GroceryList />
       <button className="fab" aria-label="Add item" onClick={() => setAdding(true)}><Plus size={30} aria-hidden /><span className="fab-label">Add item</span></button>
 
       {adding && <AddItemPopup onAdd={addItem} onClose={() => setAdding(false)} />}
-      {assigning && <AssignPopup key={assigning.id} item={assigning} onSave={(who) => assign(assigning.id, who)} onClose={() => setAssigning(null)} />}
     </>
   )
 }

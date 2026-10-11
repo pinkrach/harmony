@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { BellRing, CalendarDays, CheckCheck, ClipboardPlus, Clock, Plus } from 'lucide-react'
 import { Avatar, Check, Chip, PageHead, Segmented, Sheet } from '../components/ui'
 import RoomScene from '../components/RoomScene'
@@ -71,7 +72,15 @@ function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void
 }
 
 export default function Chores() {
-  const [sheet, setSheet] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const [sheet, setSheet] = useState(params.get('add') === '1')
+  useEffect(() => {
+    if (params.get('add') !== '1') return
+    setSheet(true)
+    const next = new URLSearchParams(params)
+    next.delete('add')
+    setParams(next, { replace: true })
+  }, [params, setParams])
   const { chores, add, toggle } = useChores()
   const [view, setView] = useState(1)
   const [nudged, setNudged] = useState<number[]>([])

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, Home, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Avatar, AvatarStack, Chip, PageHead, Segmented } from '../components/ui'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { byId, hourLabel, presence, roommates } from '../data'
 import { useChores } from '../chores'
+import { choresToEvents, dateKey, loadEvents, saveEvents, timeLabel, type CalEvent } from '../events'
 
 /* ───────── Time helpers ───────── */
 
@@ -14,18 +15,8 @@ const END = START + SPAN
 const pct = (h: number) => ((h - START) / SPAN) * 100
 const NEW_EVENT_COLOR = 'var(--mint)' // the one palette color not already used by events or roommates
 
-const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
 const hoursOf = (d: Date) => d.getHours() + d.getMinutes() / 60
-
-/** "6:30pm" style label for any decimal hour (including minutes that aren't :00 or :30). */
-function timeLabel(h: number) {
-  const total = Math.round(h * 60)
-  const hh = Math.floor(total / 60) % 24
-  const mm = total % 60
-  const n = hh % 12 === 0 ? 12 : hh % 12
-  return `${n}${mm ? `:${String(mm).padStart(2, '0')}` : ''}${hh >= 12 ? 'pm' : 'am'}`
-}
 
 /** Re-renders every 30 seconds so the "now" line keeps moving. */
 function useNow() {
@@ -35,32 +26,6 @@ function useNow() {
     return () => clearInterval(t)
   }, [])
   return now
-}
-
-/* ───────── Events (kept for this browser tab) ───────── */
-
-type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string }
-const EVENTS_KEY = 'harmony.events'
-
-function sampleEvents(): CalEvent[] {
-  const today = new Date()
-  return [
-    { id: 's1', date: dateKey(today), start: 18.5, end: 19.5, title: 'Cook dinner together', who: ['you', 'sofi', 'mara'], color: 'var(--brand)' },
-    { id: 's2', date: dateKey(today), start: 21, end: 23, title: 'Movie night in the living room', who: ['you', 'diego', 'mara', 'sofi'], color: 'var(--purple)' },
-    { id: 's3', date: dateKey(addDays(today, 2)), start: 11, end: 12, title: 'Landlord visit · fix the sink', who: ['you'], color: 'var(--yellow-d)' },
-  ]
-}
-
-function loadEvents(): CalEvent[] {
-  try {
-    const saved = sessionStorage.getItem(EVENTS_KEY)
-    if (saved) return JSON.parse(saved) as CalEvent[]
-  } catch { /* storage unavailable */ }
-  return sampleEvents()
-}
-
-function saveEvents(events: CalEvent[]) {
-  try { sessionStorage.setItem(EVENTS_KEY, JSON.stringify(events)) } catch { /* storage unavailable */ }
 }
 
 /* ───────── Combined availability chart ───────── */
@@ -469,6 +434,7 @@ function Parking() {
 export default function Calendar() {
   const now = useNow()
   const today = dateKey(now)
+  const [params, setParams] = useSearchParams()
   const [tab, setTab] = useState(0)
   const [day, setDay] = useState(today)
   const [weekOffset, setWeekOffset] = useState(0) // 0 = this week, -1 = last week, 1 = next week…
@@ -500,12 +466,7 @@ export default function Calendar() {
   const isToday = day === today
 
   const dayEvents = events.filter((e) => e.date === day).sort((a, b) => a.start - b.start)
-  const choreEvents: CalEvent[] = chores.filter((c) => c.date === day).map((c) => {
-    const [hh, mm] = (c.time || '09:00').split(':').map(Number)
-    const start = hh + (mm || 0) / 60
-    return { id: `chore-${c.id}`, date: c.date, start, end: Math.min(start + 0.5, END), title: `${c.emoji} ${c.t}`, who: [c.who], color: 'var(--mint)' }
-  })
-  const shown = [...dayEvents, ...choreEvents].sort((a, b) => a.start - b.start)
+  const shown = [...dayEvents, ...choresToEvents(chores, day)].sort((a, b) => a.start - b.start)
   const dayLabel = selected.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
 
   // The yellow button starts a new event at the next half hour (or 6pm when viewing another day).
@@ -514,6 +475,13 @@ export default function Calendar() {
     const h = Math.ceil(nowH * 2) / 2
     return h >= START && h < END ? h : START
   }
+  useEffect(() => {
+    if (params.get('add') !== '1') return
+    setAdding(nextHalfHour())
+    const next = new URLSearchParams(params)
+    next.delete('add')
+    setParams(next, { replace: true })
+  }, [params, setParams])
 
   const store = (next: CalEvent[]) => { setEvents(next); saveEvents(next) }
 
