@@ -68,19 +68,20 @@ function HomeBell() {
   )
 }
 
+/** Each tab has its own color so people know where they are at a glance. */
 const tabs = [
-  { to: '/app/home', label: 'Home', icon: Home },
-  { to: '/app/chores', label: 'Chores', icon: ClipboardList },
-  { to: '/app/payments', label: 'Bills', icon: Wallet },
-  { to: '/app/shopping', label: 'Groceries', icon: Carrot },
-  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
+  { to: '/app/home', label: 'Home', icon: Home, tone: 'brand' },
+  { to: '/app/chores', label: 'Chores', icon: ClipboardList, tone: 'mint' },
+  { to: '/app/payments', label: 'Bills', icon: Wallet, tone: 'brand' },
+  { to: '/app/shopping', label: 'Groceries', icon: Carrot, tone: 'yellow' },
+  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays, tone: 'peach' },
 ]
 
 function Nav() {
   return (
     <>
-      {tabs.map(({ to, label, icon: Icon }) => (
-        <NavLink key={to} to={to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+      {tabs.map(({ to, label, icon: Icon, tone }) => (
+        <NavLink key={to} to={to} className={({ isActive }) => `nav-item tone-${tone}${isActive ? ' active' : ''}`}>
           <Icon size={24} aria-hidden />
           <span>{label}</span>
         </NavLink>
@@ -92,8 +93,9 @@ function Nav() {
 export default function AppShell() {
   const { pathname } = useLocation()
   const home = pathname.startsWith('/app/home')
+  const tone = tabs.find((t) => pathname.startsWith(t.to))?.tone ?? 'brand'
   return (
-    <div className={home ? 'app app-home' : 'app'}>
+    <div className={home ? 'app app-home' : 'app'} data-tone={tone}>
       <aside className="sidebar" aria-label="Main">
         <div className="brand">
           <Pip size={40} />

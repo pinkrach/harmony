@@ -6,15 +6,30 @@ export function Pip({
   mood = 'happy',
   wave = false,
   float = false,
+  clay = false,
 }: {
   size?: number
   mood?: Mood
   wave?: boolean
   float?: boolean
+  clay?: boolean
 }) {
   const cls = ['pip', wave && 'wave', float && 'float'].filter(Boolean).join(' ')
   return (
     <svg viewBox="0 0 120 134" width={size} height={(size * 134) / 120} className={cls} role="img" aria-label="Pip, the Harmony mascot">
+      {clay && (
+        <defs>
+          <filter id="pip-clay" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2.6" result="b" />
+            <feDiffuseLighting in="b" surfaceScale="3.4" diffuseConstant="1.08" lightingColor="#fff" result="d"><feDistantLight azimuth="235" elevation="58" /></feDiffuseLighting>
+            <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="shaded" />
+            <feSpecularLighting in="b" surfaceScale="3.4" specularConstant=".45" specularExponent="28" lightingColor="#fff" result="s"><feDistantLight azimuth="235" elevation="55" /></feSpecularLighting>
+            <feComposite in="s" in2="SourceAlpha" operator="in" result="sIn" />
+            <feComposite in="shaded" in2="sIn" operator="arithmetic" k1="0" k2="1" k3=".5" k4="0" />
+          </filter>
+        </defs>
+      )}
+      <g filter={clay ? 'url(#pip-clay)' : undefined}>
       {/* feet */}
       <ellipse cx="42" cy="128" rx="14" ry="6" fill="#d99a00" />
       <ellipse cx="78" cy="128" rx="14" ry="6" fill="#d99a00" />
@@ -65,6 +80,7 @@ export function Pip({
         <path d="M48 98q12 14 24 0z" fill="#1f2a37" stroke="#1f2a37" strokeWidth="3" strokeLinejoin="round" />
       )}
       {(mood === 'happy' || mood === 'cheer') && <path d="M54 105q6 4 12 0" fill="none" stroke="#ff8a80" strokeWidth="3" strokeLinecap="round" />}
+      </g>
     </svg>
   )
 }

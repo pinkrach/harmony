@@ -24,7 +24,7 @@ export function AvatarStack({ ids, size = 30 }: { ids: string[]; size?: number }
   )
 }
 
-export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple' | 'blue'; children: ReactNode }) {
+export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple'; children: ReactNode }) {
   return <span className={`chip ${tone}`}>{children}</span>
 }
 
@@ -33,7 +33,7 @@ export function Toggle({ label, defaultOn = false }: { label: string; defaultOn?
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className="switch" onClick={() => setOn(!on)} />
 }
 
-const confettiColors = ['#ffd23f', '#ff5c7a', '#7c5cff', '#22c58b', '#3bb2ff']
+const confettiColors = ['#ffd54a', '#f2646b', '#6b4fd8', '#2fbf94', '#8a72f0']
 
 export function Check({ label, defaultOn = false, xp = 10, onToggle }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void }) {
   const [on, setOn] = useState(defaultOn)
@@ -129,7 +129,7 @@ export function Sheet({ open, title, icon, tone = 'bg-teal', onClose, children }
   if (!open) return null
   return createPortal(
     <div className="sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} ref={ref}>
+      <div className={`sheet t-${tone.replace('bg-', '')}`} role="dialog" aria-modal="true" aria-label={title} ref={ref}>
         <span className="sheet-grip" aria-hidden />
         <div className="sheet-head">
           <span className={`bubble-ico ${tone}`}>{icon}</span>

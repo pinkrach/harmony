@@ -229,7 +229,7 @@ export function Invite() {
 
 const prefs = [
   { icon: ClipboardList, tone: 'bg-teal', t: 'Chore reminders', d: 'Due soon and overdue', on: true },
-  { icon: Wallet, tone: 'bg-blue', t: 'Payments', d: 'New bills and payments received', on: true },
+  { icon: Wallet, tone: 'bg-purple', t: 'Payments', d: 'New bills and payments received', on: true },
   { icon: Sparkles, tone: 'bg-purple', t: 'Shopping lists', d: 'When roommates update a list', on: true },
   { icon: Car, tone: 'bg-coral', t: 'Parking & calendar', d: 'Permits, conflicts and events', on: false },
 ]

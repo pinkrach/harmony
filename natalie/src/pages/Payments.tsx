@@ -40,7 +40,7 @@ function NewBill({ open, onClose }: { open: boolean; onClose: () => void }) {
   }
 
   return (
-    <Sheet open={open} title="Add bill" icon={<ReceiptText aria-hidden />} tone="bg-blue" onClose={onClose}>
+    <Sheet open={open} title="Add bill" icon={<ReceiptText aria-hidden />} tone="bg-purple" onClose={onClose}>
       <form className="stack" style={{ gap: 18 }} onSubmit={submit}>
         <div className="field">
           <span className="lbl">What’s it for?</span>

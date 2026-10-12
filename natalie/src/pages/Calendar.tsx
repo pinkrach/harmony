@@ -386,7 +386,7 @@ function Bathroom() {
 
   return (
     <>
-      <div className="section-head" style={{ marginTop: 20 }}><h2>Bathroom slots</h2><Chip tone="blue">30 min each</Chip></div>
+      <div className="section-head" style={{ marginTop: 20 }}><h2>Bathroom slots</h2><Chip tone="purple">30 min each</Chip></div>
       <div className="slot-grid">
         {sorted.map((s) => (
           <div key={s.who + s.start} className="slot">

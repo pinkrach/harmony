@@ -4,10 +4,10 @@ import { addDays, iso } from './chores'
 
 export type Kind = 'wifi' | 'power' | 'water' | 'rent' | 'gas' | 'other'
 export const kinds: Record<Kind, { label: string; icon: LucideIcon; tone: string }> = {
-  wifi: { label: 'Wi‑Fi', icon: Wifi, tone: 'bg-blue' },
+  wifi: { label: 'Wi‑Fi', icon: Wifi, tone: 'bg-purple' },
   power: { label: 'Electricity', icon: Zap, tone: 'bg-yellow' },
   water: { label: 'Water', icon: Droplets, tone: 'bg-teal' },
-  rent: { label: 'Rent', icon: Home, tone: 'bg-purple' },
+  rent: { label: 'Rent', icon: Home, tone: 'bg-peach' },
   gas: { label: 'Gas', icon: Flame, tone: 'bg-coral' },
   other: { label: 'Other', icon: Receipt, tone: 'bg-purple' },
 }
