@@ -24,7 +24,7 @@ export function AvatarStack({ ids, size = 30 }: { ids: string[]; size?: number }
   )
 }
 
-export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple'; children: ReactNode }) {
+export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple' | 'blue'; children: ReactNode }) {
   return <span className={`chip ${tone}`}>{children}</span>
 }
 
@@ -33,7 +33,7 @@ export function Toggle({ label, defaultOn = false }: { label: string; defaultOn?
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className="switch" onClick={() => setOn(!on)} />
 }
 
-const confettiColors = ['#ffc83d', '#e4684f', '#2e7d6b', '#7dcfb6', '#4fa38f']
+const confettiColors = ['#ffd54a', '#e0566c', '#5f43a8', '#1b7d58', '#8a6fe0']
 
 export function Check({ label, defaultOn = false, xp = 10, onToggle }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void }) {
   const [on, setOn] = useState(defaultOn)
