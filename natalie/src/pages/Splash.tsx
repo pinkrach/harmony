@@ -29,7 +29,7 @@ export default function Splash() {
 
   return (
     <div className="splash" onClick={leave}>
-      <div className="confetti-bg" aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#ffd54a', '#f2646b', '#2fbf94', '#8a72f0', '#fff'][i % 5], animationDuration: `${4 + (i % 5)}s`, animationDelay: `${(i % 7) * 0.5}s` }} />)}</div>
+      <div className="confetti-bg" aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#ffc83d', '#e4684f', '#7dcfb6', '#4fa38f', '#fff'][i % 5], animationDuration: `${4 + (i % 5)}s`, animationDelay: `${(i % 7) * 0.5}s` }} />)}</div>
       <div className="doorway" aria-hidden>
         <div className="glow">
           <Pip size={130} mood="cheer" wave />

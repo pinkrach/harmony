@@ -68,13 +68,13 @@ function HomeBell() {
   )
 }
 
-/** Each tab has its own color so people know where they are at a glance. */
+/** One accent color across the app (Harmony lavender). */
 const tabs = [
   { to: '/app/home', label: 'Home', icon: Home, tone: 'brand' },
-  { to: '/app/chores', label: 'Chores', icon: ClipboardList, tone: 'mint' },
+  { to: '/app/chores', label: 'Chores', icon: ClipboardList, tone: 'brand' },
   { to: '/app/payments', label: 'Bills', icon: Wallet, tone: 'brand' },
-  { to: '/app/shopping', label: 'Groceries', icon: Carrot, tone: 'yellow' },
-  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays, tone: 'peach' },
+  { to: '/app/shopping', label: 'Groceries', icon: Carrot, tone: 'brand' },
+  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays, tone: 'brand' },
 ]
 
 function Nav() {

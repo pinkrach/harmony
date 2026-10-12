@@ -33,7 +33,7 @@ export function Toggle({ label, defaultOn = false }: { label: string; defaultOn?
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className="switch" onClick={() => setOn(!on)} />
 }
 
-const confettiColors = ['#ffd54a', '#f2646b', '#6b4fd8', '#2fbf94', '#8a72f0']
+const confettiColors = ['#ffc83d', '#e4684f', '#2e7d6b', '#7dcfb6', '#4fa38f']
 
 export function Check({ label, defaultOn = false, xp = 10, onToggle }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void }) {
   const [on, setOn] = useState(defaultOn)

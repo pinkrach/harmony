@@ -14,7 +14,7 @@ const message = (removed: number) =>
 /** Monstera leaf: heart-shaped, tip up from (0,0). Slits are cut by the #rs-slits mask. */
 const MONS = 'M0 0C-6-4-25-9-25-29C-25-43-10-51 0-56C10-51 25-43 25-29C25 -9 6-4 0 0z'
 const bigLeaves: [number, number][] = [[-62, 0.95], [60, 0.9], [-34, 1.2], [34, 1.15], [-10, 1.45], [13, 1.3]]
-const SHADOW = '#3f2f78' // shadows are tinted purple, never black
+const SHADOW = '#2f5247' // shadows are tinted purple, never black
 
 const clay = 'url(#rs-clay)'
 const clayBig = 'url(#rs-clay-big)'
@@ -32,10 +32,10 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
       <div className="room-stage">
         <svg viewBox="0 0 400 270" role="img" aria-label={`Living room, ${done} of ${total} chores done. ${message(removed)}`}>
           <defs>
-            <linearGradient id="rs-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#eaf8f0" /><stop offset="1" stopColor="#d9efe2" /></linearGradient>
-            <linearGradient id="rs-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d5ecde" /><stop offset="1" stopColor="#c1dfcd" /></linearGradient>
-            <radialGradient id="rs-rug" cx=".5" cy=".35" r=".75"><stop offset="0" stopColor="#e0d4f8" /><stop offset="1" stopColor="#c4b0ee" /></radialGradient>
-            <linearGradient id="rs-sofa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9ccf5" /><stop offset="1" stopColor="#b8a4e8" /></linearGradient>
+            <linearGradient id="rs-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fcf8ee" /><stop offset="1" stopColor="#d9efe2" /></linearGradient>
+            <linearGradient id="rs-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ecdfc6" /><stop offset="1" stopColor="#ddcca9" /></linearGradient>
+            <radialGradient id="rs-rug" cx=".5" cy=".35" r=".75"><stop offset="0" stopColor="#f4ead2" /><stop offset="1" stopColor="#e3d2a8" /></radialGradient>
+            <linearGradient id="rs-sofa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#cfe8de" /><stop offset="1" stopColor="#93c9b5" /></linearGradient>
             <linearGradient id="rs-yellow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffe573" /><stop offset="1" stopColor="#ffc928" /></linearGradient>
             <linearGradient id="rs-leaf" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#2a7448" /><stop offset="1" stopColor="#52ad6f" /></linearGradient>
             <linearGradient id="rs-wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ebbf8e" /><stop offset="1" stopColor="#cb9560" /></linearGradient>
@@ -95,9 +95,9 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
           <g className="frame" filter={clay}>
             <rect x="196" y="22" width="56" height="48" rx="4" fill="url(#rs-wood)" />
             <rect x="203" y="29" width="42" height="34" rx="2" fill="#fbf3e4" />
-            <circle cx="236" cy="39" r="5.5" fill="#ffd23f" />
-            <path d="M208 52c0-9 7-12 11-9s5 9 3 14h-12c-1-1-2-3-2-5z" fill="#cdbdf0" />
-            <path d="M228 58c0-7 4-10 8-8s4 6 3 10h-9z" fill="#5a3d7a" />
+            <circle cx="236" cy="39" r="5.5" fill="#ffc83d" />
+            <path d="M208 52c0-9 7-12 11-9s5 9 3 14h-12c-1-1-2-3-2-5z" fill="#a9d6c6" />
+            <path d="M228 58c0-7 4-10 8-8s4 6 3 10h-9z" fill="#2e5c50" />
           </g>
 
           {/* rug: felt with fuzzy edge */}
@@ -115,7 +115,7 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
             <rect x="110" y="108" width="190" height="68" rx="34" fill="url(#rs-sofa)" />
             <rect x="94" y="126" width="44" height="74" rx="22" fill="url(#rs-sofa)" />
             <rect x="272" y="126" width="44" height="74" rx="22" fill="url(#rs-sofa)" />
-            <rect x="116" y="148" width="178" height="48" rx="24" fill="#cdbdf1" />
+            <rect x="116" y="148" width="178" height="48" rx="24" fill="#b6dccb" />
           </g>
           <rect x="132" y="150" width="146" height="14" rx="7" fill="url(#rs-occl)" />
           <g filter={clay}>
@@ -151,10 +151,10 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
             <ellipse cx="116" cy="207" rx="20" ry="3.4" fill={SHADOW} opacity=".3" filter="url(#rs-contact)" />
             <g filter={clay}>
               <rect x="104" y="200" width="36" height="7.5" rx="2.5" fill="#f3ead8" />
-              <rect x="106" y="193" width="32" height="7.5" rx="2.5" fill="#cdbdf0" />
+              <rect x="106" y="193" width="32" height="7.5" rx="2.5" fill="#a9d6c6" />
               <rect x="110" y="195.5" width="24" height="1.4" rx=".7" fill="#fff" opacity=".6" />
-              <rect x="146" y="195" width="14" height="15" rx="5" fill="#5a3d7a" />
-              <path d="M159.5 199c7 0 7 9 0 9" fill="none" stroke="#5a3d7a" strokeWidth="2.6" />
+              <rect x="146" y="195" width="14" height="15" rx="5" fill="#2e5c50" />
+              <path d="M159.5 199c7 0 7 9 0 9" fill="none" stroke="#2e5c50" strokeWidth="2.6" />
               <ellipse cx="153" cy="195.5" rx="6" ry="1.8" fill="#3b2a56" />
               <rect x="91" y="198" width="13" height="10" rx="4" fill="url(#rs-cream)" />
               <path d="M97.5 198c-5-6-5-10-2-12 3 2 3 7 2 12zM97.5 198c5-6 6-9 4-12-3 2-5 6-4 12z" fill="url(#rs-leaf)" />
@@ -189,12 +189,12 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
           <g filter={clay}>
             <rect x="326" y="226" width="9" height="13" rx="3.5" fill="url(#rs-wood)" />
             <rect x="370" y="226" width="9" height="13" rx="3.5" fill="url(#rs-wood)" />
-            <rect className="bk" style={{ '--r': '-14deg' } as CSSProperties} x="327" y="144" width="8" height="28" rx="3" fill="#bda9ea" />
+            <rect className="bk" style={{ '--r': '-14deg' } as CSSProperties} x="327" y="144" width="8" height="28" rx="3" fill="#8cc5b1" />
             <rect x="336" y="140" width="8" height="32" rx="3" fill="#f4eee2" />
             <rect className="bk" style={{ '--r': '12deg' } as CSSProperties} x="345" y="146" width="8" height="26" rx="3" fill="#ffd84f" />
             <rect x="354" y="142" width="7" height="30" rx="3" fill="#a8d5ae" />
-            <path d="M363 172v-20a6 6 0 0 1 12 0v20z" fill="#5a3d7a" />
-            <rect x="328" y="200" width="9" height="20" rx="3" fill="#bda9ea" />
+            <path d="M363 172v-20a6 6 0 0 1 12 0v20z" fill="#2e5c50" />
+            <rect x="328" y="200" width="9" height="20" rx="3" fill="#8cc5b1" />
             <rect x="338" y="196" width="8" height="24" rx="3" fill="#f4eee2" />
             <rect x="347" y="200" width="8" height="20" rx="3" fill="#ffd84f" />
             <path d="M359 220v-4a9 9 0 0 1 18 0v4z" fill="url(#rs-cream)" />
@@ -238,7 +238,7 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
           {/* clutter 4: toppled books + spill */}
           <g className={`clutter${gone(4)}`} filter={clay}>
             <ellipse cx="170" cy="244" rx="20" ry="6" fill="#8a5a3a" opacity=".78" />
-            <rect x="268" y="244" width="26" height="8" rx="3" fill="#bda9ea" transform="rotate(-12 281 248)" />
+            <rect x="268" y="244" width="26" height="8" rx="3" fill="#8cc5b1" transform="rotate(-12 281 248)" />
             <rect x="274" y="252" width="26" height="8" rx="3" fill="#f4eee2" transform="rotate(8 287 256)" />
             <rect x="156" y="236" width="9" height="13" rx="3" fill="#ff5c7a" transform="rotate(24 160 242)" />
           </g>
