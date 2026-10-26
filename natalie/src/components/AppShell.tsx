@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { flushSync } from 'react-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, CalendarDays, Carrot, ClipboardList, Flame, Home, Wallet } from 'lucide-react'
 import { Pip } from './Pip'
 import { Avatar } from './ui'
@@ -71,17 +72,26 @@ function HomeBell() {
 /** One accent color across the app (Harmony lavender). */
 const tabs = [
   { to: '/app/home', label: 'Home', icon: Home, tone: 'brand' },
+  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays, tone: 'brand' },
   { to: '/app/chores', label: 'Chores', icon: ClipboardList, tone: 'brand' },
   { to: '/app/payments', label: 'Bills', icon: Wallet, tone: 'brand' },
   { to: '/app/shopping', label: 'Groceries', icon: Carrot, tone: 'brand' },
-  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays, tone: 'brand' },
 ]
 
 function Nav() {
+  const navigate = useNavigate()
+  /** Page exit: the old page fades out quickly (View Transitions), then the new page rises in. Falls back to a plain navigation. */
+  const go = (to: string) => (e: React.MouseEvent) => {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown }
+    if (!doc.startViewTransition || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    e.preventDefault()
+    doc.startViewTransition(() => { flushSync(() => navigate(to)) })
+  }
   return (
     <>
       {tabs.map(({ to, label, icon: Icon, tone }) => (
-        <NavLink key={to} to={to} className={({ isActive }) => `nav-item tone-${tone}${isActive ? ' active' : ''}`}>
+        <NavLink key={to} to={to} onClick={go(to)} className={({ isActive }) => `nav-item tone-${tone}${isActive ? ' active' : ''}`}>
           <Icon size={24} aria-hidden />
           <span>{label}</span>
         </NavLink>

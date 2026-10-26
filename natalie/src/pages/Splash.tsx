@@ -23,16 +23,16 @@ export default function Splash() {
   }
 
   useEffect(() => {
-    const t = setTimeout(leave, 2800)
+    const t = setTimeout(leave, 3600)
     return () => clearTimeout(t)
   }, [])
 
   return (
     <div className="splash" onClick={leave}>
-      <div className="confetti-bg" aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#ffc83d', '#e4684f', '#7dcfb6', '#4fa38f', '#fff'][i % 5], animationDuration: `${4 + (i % 5)}s`, animationDelay: `${(i % 7) * 0.5}s` }} />)}</div>
+      <div className="confetti-bg" aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, background: ['#ffd54a', '#e0566c', '#1b7d58', '#8a6fe0', '#fff'][i % 5], animationDuration: `${4 + (i % 5)}s`, animationDelay: `${(i % 7) * 0.5}s` }} />)}</div>
       <div className="doorway" aria-hidden>
         <div className="glow">
-          <Pip size={130} mood="cheer" wave />
+          <Pip size={150} walk />
         </div>
         <div className="door"><span className="knob" /></div>
       </div>

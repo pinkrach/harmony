@@ -1,86 +1,96 @@
-export type Mood = 'happy' | 'wow' | 'cheer' | 'sad' | 'meh'
+import { useEffect, useState } from 'react'
+import front from '../assets/pip/front.webp'
+import body from '../assets/pip/body.webp'
+import footL from '../assets/pip/foot-l.webp'
+import footR from '../assets/pip/foot-r.webp'
+import eyesBlink from '../assets/pip/eyes-blink.webp'
+import eyesJoy from '../assets/pip/eyes-joy.webp'
+import wavePose from '../assets/pip/wave.webp'
+import grumpyPose from '../assets/pip/grumpy.webp'
 
-/** Pip — Harmony's little house-shaped mascot. */
+export type Mood = 'happy' | 'wow' | 'cheer' | 'sad' | 'meh'
+type Pose = 'front' | 'wave' | 'grumpy'
+
+/** Which of the three clay poses fits the mood. */
+const poseFor = (mood: Mood): Pose => (mood === 'sad' || mood === 'meh' ? 'grumpy' : mood === 'cheer' ? 'wave' : 'front')
+
+/**
+ * Pip, Harmony's clay house mascot.
+ * - happy / wow: front pose. Blinks, breathes, squints a smile now and then, hops when poked.
+ * - cheer: winking wave pose with a little bounce.
+ * - sad / meh: grumpy arms-crossed pose.
+ * - `wave`: front pose that greets with a wave every few seconds.
+ * - `walk`: front pose with a waddling walk cycle (feet step one after the other). Use it while something loads.
+ * Under 64px it renders as one still image (header, tiny spots).
+ */
 export function Pip({
   size = 120,
   mood = 'happy',
   wave = false,
   float = false,
-  clay = false,
+  walk = false,
+  poke = 0,
 }: {
   size?: number
   mood?: Mood
   wave?: boolean
   float?: boolean
+  walk?: boolean
+  /** Change this number to make Pip hop (e.g. when the user finishes something). */
+  poke?: number
+  /** Kept for old call sites: the clay look is baked into the images now. */
   clay?: boolean
 }) {
-  const cls = ['pip', wave && 'wave', float && 'float'].filter(Boolean).join(' ')
+  const basePose: Pose = walk ? 'front' : poseFor(mood)
+  const [boop, setBoop] = useState(false)
+  const [greeting, setGreeting] = useState(false)
+  useEffect(() => { if (poke) setBoop(true) }, [poke])
+  const canGreet = wave && !walk && basePose === 'front' && size >= 64
+
+  // `wave`: say hi with the waving pose for ~1.8s every 14s (first hello after ~1.2s).
+  useEffect(() => {
+    if (!canGreet) return
+    let off: ReturnType<typeof setTimeout>
+    const hello = () => {
+      setGreeting(true)
+      off = setTimeout(() => setGreeting(false), 1800)
+    }
+    const first = setTimeout(hello, 1200)
+    const every = setInterval(hello, 14000)
+    return () => { clearTimeout(first); clearInterval(every); clearTimeout(off) }
+  }, [canGreet])
+
+  const pose: Pose = canGreet && greeting ? 'wave' : basePose
+  const cls = ['pip', 'pip3d', float && 'float', walk && 'walk', boop && 'boop'].filter(Boolean).join(' ')
+  const style = { '--pip-size': `${size}px`, '--blink-delay': `${((size * 7) % 31) / 10}s` } as React.CSSProperties
+
+  if (size < 64) {
+    return (
+      <span className={cls} style={style} data-pose={pose} role="img" aria-label="Pip, the Harmony mascot">
+        <img className="pip-l pip-still" src={pose === 'grumpy' ? grumpyPose : pose === 'wave' ? wavePose : front} alt="" draggable={false} />
+      </span>
+    )
+  }
+
   return (
-    <svg viewBox="0 0 120 134" width={size} height={(size * 134) / 120} className={cls} role="img" aria-label="Pip, the Harmony mascot">
-      {clay && (
-        <defs>
-          <filter id="pip-clay" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="2.6" result="b" />
-            <feDiffuseLighting in="b" surfaceScale="3.4" diffuseConstant="1.08" lightingColor="#fff" result="d"><feDistantLight azimuth="235" elevation="58" /></feDiffuseLighting>
-            <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="shaded" />
-            <feSpecularLighting in="b" surfaceScale="3.4" specularConstant=".45" specularExponent="28" lightingColor="#fff" result="s"><feDistantLight azimuth="235" elevation="55" /></feSpecularLighting>
-            <feComposite in="s" in2="SourceAlpha" operator="in" result="sIn" />
-            <feComposite in="shaded" in2="sIn" operator="arithmetic" k1="0" k2="1" k3=".5" k4="0" />
-          </filter>
-        </defs>
-      )}
-      <g filter={clay ? 'url(#pip-clay)' : undefined}>
-      {/* feet */}
-      <ellipse cx="42" cy="128" rx="14" ry="6" fill="#d99a00" />
-      <ellipse cx="78" cy="128" rx="14" ry="6" fill="#d99a00" />
-      {/* chimney */}
-      <rect x="78" y="10" width="14" height="26" rx="4" fill="#d94848" />
-      {/* body */}
-      <rect x="14" y="44" width="92" height="82" rx="32" fill="#ffc83d" />
-      <ellipse cx="38" cy="58" rx="12" ry="5" fill="#fff" opacity="0.35" transform="rotate(-20 38 58)" />
-      {/* arms */}
-      <ellipse cx="12" cy="94" rx="8" ry="12" fill="#ffb41f" transform="rotate(20 12 94)" />
-      <g className="arm-r">
-        <ellipse cx="108" cy="94" rx="8" ry="12" fill="#ffb41f" transform="rotate(-20 108 94)" />
-      </g>
-      {/* roof */}
-      <path d="M16 52 60 16l44 36z" fill="#ff6b6b" stroke="#ff6b6b" strokeWidth="14" strokeLinejoin="round" />
-      <circle cx="60" cy="40" r="6" fill="#ffe1e1" />
-      {/* eyes */}
-      {mood === 'cheer' ? (
-        <>
-          <path d="M33 78q9-12 18 0" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
-          <path d="M69 78q9-12 18 0" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
-        </>
-      ) : (
-        <>
-          <g className="eye"><circle cx="42" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 42 : 44} cy={mood === 'sad' ? 82 : 79} r="6.5" fill="#1f2a37" /><circle cx="46" cy="75" r="2.2" fill="#fff" /></g>
-          <g className="eye"><circle cx="78" cy="78" r="12" fill="#fff" /><circle cx={mood === 'wow' ? 78 : 80} cy={mood === 'sad' ? 82 : 79} r="6.5" fill="#1f2a37" /><circle cx="82" cy="75" r="2.2" fill="#fff" /></g>
-        </>
-      )}
-      {/* brows + sweat for the grumpy moods */}
-      {mood === 'sad' && (
-        <>
-          <path d="M31 66 53 59M89 66 67 59" fill="none" stroke="#1f2a37" strokeWidth="4" strokeLinecap="round" />
-          <path d="M100 60q7 10 0 15q-7-5 0-15z" fill="#7fd1ff" />
-        </>
-      )}
-      {mood === 'meh' && <path d="M32 63h20M68 63h20" fill="none" stroke="#1f2a37" strokeWidth="4" strokeLinecap="round" />}
-      {/* cheeks */}
-      <circle cx="28" cy="97" r="6" fill="#ff8a80" opacity="0.7" />
-      <circle cx="92" cy="97" r="6" fill="#ff8a80" opacity="0.7" />
-      {/* mouth */}
-      {mood === 'wow' ? (
-        <ellipse cx="60" cy="102" rx="6" ry="8" fill="#1f2a37" />
-      ) : mood === 'sad' ? (
-        <path d="M47 108q13-13 26 0" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
-      ) : mood === 'meh' ? (
-        <path d="M49 104h22" fill="none" stroke="#1f2a37" strokeWidth="5" strokeLinecap="round" />
-      ) : (
-        <path d="M48 98q12 14 24 0z" fill="#1f2a37" stroke="#1f2a37" strokeWidth="3" strokeLinejoin="round" />
-      )}
-      {(mood === 'happy' || mood === 'cheer') && <path d="M54 105q6 4 12 0" fill="none" stroke="#ff8a80" strokeWidth="3" strokeLinecap="round" />}
-      </g>
-    </svg>
+    <span
+      className={cls}
+      style={style}
+      data-pose={pose}
+      role="img"
+      aria-label="Pip, the Harmony mascot"
+      onClick={() => !walk && setBoop(true)}
+      onAnimationEnd={(e) => e.animationName === 'pip-boop' && setBoop(false)}
+    >
+      <span className="pip-rig">
+        <img className="pip-l pip-foot-l" src={footL} alt="" draggable={false} />
+        <img className="pip-l pip-foot-r" src={footR} alt="" draggable={false} />
+        <img className="pip-l pip-body" src={body} alt="" draggable={false} />
+        <img className="pip-l pip-lids" src={eyesBlink} alt="" draggable={false} />
+        <img className="pip-l pip-joy" src={eyesJoy} alt="" draggable={false} />
+        <img className="pip-l pip-wave" src={wavePose} alt="" draggable={false} />
+        <img className="pip-l pip-grumpy" src={grumpyPose} alt="" draggable={false} />
+      </span>
+    </span>
   )
 }

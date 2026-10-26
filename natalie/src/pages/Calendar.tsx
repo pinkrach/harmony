@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, Home, Pencil, Plus, Trash2 } from 'lucide-react'
-import { Avatar, AvatarStack, Chip, PageHead, Segmented } from '../components/ui'
-import { Link, useSearchParams } from 'react-router-dom'
+import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, ClipboardList, Home, KeyRound, Plus, ShowerHead, Sofa, Trash2, UtensilsCrossed, Users, Wrench, type LucideIcon } from 'lucide-react'
+import { Avatar, Chip, PageHead, Segmented, Sheet } from '../components/ui'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { iso } from '../chores'
 import { byId, hourLabel, presence, roommates } from '../data'
 import { useChores } from '../chores'
-import { choresToEvents, dateKey, loadEvents, saveEvents, timeLabel, type CalEvent } from '../events'
+import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, saveEvents, timeLabel, type CalEvent, type Repeat } from '../events'
 
 /* ───────── Time helpers ───────── */
 
-const START = 6 // chart starts at 6am
-const SPAN = 18 // …and runs 18 hours, to midnight
+const START = 0 // the whole day, midnight to midnight
+const SPAN = 24
 const END = START + SPAN
 const pct = (h: number) => ((h - START) / SPAN) * 100
 const NEW_EVENT_COLOR = 'var(--mint)' // the one palette color not already used by events or roommates
@@ -36,77 +37,45 @@ function homeNow(ranges: Ranges, h: number) {
   return ranges.some(([a, b]) => h >= a && h < b)
 }
 
-function Chart({ days, isToday, nowH, events, homeOf, onPick, onEdit, onEditHome }: { days: ReactNode; isToday: boolean; nowH: number; events: CalEvent[]; homeOf: (id: string) => Ranges; onPick: (h: number) => void; onEdit: (e: CalEvent) => void; onEditHome: () => void }) {
-  const [hover, setHover] = useState<number | null>(null)
+/** The range of `ranges` that covers hour `h`, or the next one that starts after it. */
+function statusFor(ranges: Ranges, h: number | null) {
+  const sorted = [...ranges].sort((x, y) => x[0] - y[0])
+  if (!sorted.length) return 'Away all day'
+  const range = (a: number, b: number) => `${timeLabel(a)} – ${timeLabel(b)}`
+  if (h === null) return `Home ${sorted.map(([a, b]) => range(a, b)).join(', ')}`
+  const cur = sorted.find(([a, b]) => h >= a && h < b)
+  if (cur) return `Home now · until ${timeLabel(cur[1])}`
+  const next = sorted.find(([a]) => a > h)
+  return next ? `Away · back at ${timeLabel(next[0])}` : 'Away for the rest of the day'
+}
+
+/** Who's home: one calm tile per roommate, with a single slim bar for the day. */
+function WhoIsHome({ isToday, nowH, homeOf, onEditHome }: { isToday: boolean; nowH: number; homeOf: (id: string) => Ranges; onEditHome: () => void }) {
   const showNow = isToday && nowH >= START && nowH < END
-
-  // Turn a click position on any track into a time, rounded down to the half hour.
-  const timeAt = (e: MouseEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    const h = START + ((e.clientX - r.left) / r.width) * SPAN
-    return Math.min(END - 0.5, Math.max(START, Math.floor(h * 2) / 2))
-  }
-  const trackProps = {
-    title: 'Click to add an event',
-    onClick: (e: MouseEvent<HTMLElement>) => onPick(timeAt(e)),
-    onMouseMove: (e: MouseEvent<HTMLElement>) => setHover(timeAt(e)),
-    onMouseLeave: () => setHover(null),
-  }
-  const marks = (
-    <>
-      {showNow && <span className="g-now" style={{ left: `${pct(nowH)}%` }} />}
-      {hover !== null && <span className="g-hover" style={{ left: `${pct(hover)}%` }} />}
-    </>
-  )
-
   return (
-    <div className="card flat cal-chart">
-      {days}
-      <div className="g-hours">
-        <span />
-        <div className="hrs">
-          {Array.from({ length: SPAN / 3 + 1 }, (_, i) => START + i * 3).map((h) => (
-            <span key={h} style={{ left: `${pct(h)}%` }}>{hourLabel(h % 24).replace(':00', '')}</span>
-          ))}
-          {showNow && <b className="now-tag" style={{ left: `${pct(nowH)}%` }}>{timeLabel(nowH)}</b>}
-          {hover !== null && (!showNow || Math.abs(hover - nowH) > 1.5) && <b className="now-tag hover" style={{ left: `${pct(hover)}%` }}>{timeLabel(hover)}</b>}
-        </div>
+    <div className="who-home">
+      <div className="wh-axis" aria-hidden>
+        {[0, 6, 12, 18, 24].map((h) => <span key={h} style={{ left: `${pct(h)}%` }}>{hourLabel(h % 24)}</span>)}
       </div>
-
-      {roommates.map((r) => (
-        <div className="g-row" key={r.id}>
-          <div className="g-label">
-            <Avatar id={r.id} size={28} home={isToday ? homeNow(homeOf(r.id), nowH) : undefined} />
-            <span className="g-name">{r.name}</span>
-          </div>
-          <div className="g-track" {...trackProps}>
-            {homeOf(r.id).map(([s, e], i) => (
-              <span key={i} className="g-bar" style={{ left: `${pct(s)}%`, width: `${pct(e) - pct(s)}%`, background: r.color, color: r.ink, animationDelay: `${i * 80}ms` }}>
-                <span className="g-bar-text">{e - s >= 2 ? 'Home' : ''}</span>
-              </span>
-            ))}
-            {marks}
-          </div>
-        </div>
-      ))}
-
-      <div className="g-row">
-        <div className="g-label"><span className="bubble-ico bg-teal g-ico"><CalendarDays size={15} aria-hidden /></span><span className="g-name">Events</span></div>
-        <div className="g-track" {...trackProps}>
-          {events.map((ev) => (
-            <span key={ev.id} className="g-bar g-event" role="button" tabIndex={0} aria-label={ev.id.startsWith('chore-') ? `${ev.title}. Open in Chores` : `Edit ${ev.title}`} onClick={(e) => { e.stopPropagation(); if (!ev.id.startsWith('chore-')) onEdit(ev) }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!ev.id.startsWith('chore-')) onEdit(ev) } }} onMouseMove={(e) => e.stopPropagation()} title={`${ev.title} · ${timeLabel(ev.start)}–${timeLabel(ev.end)}`} style={{ left: `${pct(Math.max(ev.start, START))}%`, width: `${pct(Math.min(ev.end, END)) - pct(Math.max(ev.start, START))}%`, background: ev.color }}>
-              <span className="g-bar-text">{ev.title}</span>
-            </span>
-          ))}
-          {marks}
-        </div>
+      <div className="day-list tiles">
+        {roommates.map((r) => {
+          const ranges = homeOf(r.id)
+          const home = isToday && homeNow(ranges, nowH)
+          return (
+            <div className={`day-row who-row${home ? ' is-home' : ''}`} key={r.id}>
+              <Avatar id={r.id} size={40} home={isToday ? home : undefined} />
+              <div className="day-txt">
+                <b>{r.id === 'you' ? 'You' : r.name}</b>
+                <small>{statusFor(ranges, isToday ? nowH : null)}</small>
+                <span className="wh-bar" aria-hidden>
+                  {ranges.map(([s, e], i) => <i key={i} style={{ left: `${pct(Math.max(s, START))}%`, width: `${pct(Math.min(e, END)) - pct(Math.max(s, START))}%`, background: r.color }} />)}
+                  {showNow && <em style={{ left: `${pct(nowH)}%` }} />}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
-
-      <div className="legend">
-        <span><i style={{ background: `linear-gradient(90deg, ${roommates.map((r) => r.color).join(', ')})` }} />At home</span>
-        <span><i style={{ background: 'var(--coral)' }} />Now</span>
-      </div>
-      <p className="cal-hint">Tap anywhere on the chart to add an event at that time.</p>
       <button type="button" className="slot open slot-action" onClick={onEditHome}>
         <Home size={16} aria-hidden /> Edit when you’re home
       </button>
@@ -114,17 +83,134 @@ function Chart({ days, isToday, nowH, events, homeOf, onPick, onEdit, onEditHome
   )
 }
 
+/* ───────── Day timeline (vertical, like a phone calendar) ───────── */
+
+const HOUR_PX = 64
+
+/** Side-by-side columns for events that overlap in time. */
+function layoutDay(events: CalEvent[]) {
+  const sorted = [...events].sort((a, b) => a.start - b.start || b.end - a.end)
+  const out: { ev: CalEvent; col: number; cols: number }[] = []
+  let cluster: typeof out = []
+  let clusterEnd = -1
+  const flush = () => { const n = Math.max(1, ...cluster.map((c) => c.col + 1)); cluster.forEach((c) => (c.cols = n)); out.push(...cluster); cluster = []; clusterEnd = -1 }
+  for (const ev of sorted) {
+    if (cluster.length && ev.start >= clusterEnd) flush()
+    const used = cluster.filter((c) => c.ev.end > ev.start).map((c) => c.col)
+    let col = 0
+    while (used.includes(col)) col++
+    cluster.push({ ev, col, cols: 1 })
+    clusterEnd = Math.max(clusterEnd, ev.end)
+  }
+  flush()
+  return out
+}
+
+const EMOJI_LEAD = /^\p{Extended_Pictographic}\uFE0F?\s*/u
+
+/** A fitting icon for an event, from what it's about. */
+function iconFor(ev: CalEvent): LucideIcon {
+  if (ev.id.startsWith('chore-')) return ClipboardList
+  const t = ev.title.toLowerCase()
+  if (/bath|shower/.test(t)) return ShowerHead
+  if (/living|sofa|couch/.test(t)) return Sofa
+  if (/cook|dinner|lunch|breakfast|meal|kitchen/.test(t)) return UtensilsCrossed
+  if (/movie|film|friends|party|game|guests|night/.test(t)) return Users
+  if (/landlord|fix|repair|sink|inspection/.test(t)) return Wrench
+  if (/car|parking|permit/.test(t)) return Car
+  return CalendarDays
+}
+
+function DayTimeline({ events, isToday, nowH, onPick, onEdit }: { events: CalEvent[]; isToday: boolean; nowH: number; onPick: (h: number) => void; onEdit: (e: CalEvent) => void }) {
+  const box = useRef<HTMLDivElement>(null)
+  // Land on the current hour when the page opens, so today's plans are in view.
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const target = isToday ? Math.max(START, nowH - 1.5) : 7 // other days open at 7am
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY + (target - START) * HOUR_PX - 150) })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const showNow = isToday && nowH >= START && nowH < END
+  const laid = layoutDay(events)
+  return (
+    <div className="vtl" ref={box}>
+      <div className="vtl-grid" style={{ height: SPAN * HOUR_PX }}>
+        {Array.from({ length: SPAN + 1 }, (_, i) => (
+          <div key={i} className="vtl-hour" style={{ top: i * HOUR_PX }}><span>{hourLabel((START + i) % 24)}</span></div>
+        ))}
+        <div
+          className="vtl-lane"
+          title="Tap to add an event"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            const h = START + (e.clientY - r.top) / HOUR_PX
+            onPick(Math.min(END - 0.5, Math.max(START, Math.floor(h * 2) / 2)))
+          }}
+        >
+          {showNow && <span className="vtl-now" style={{ top: (nowH - START) * HOUR_PX }} aria-hidden />}
+          {laid.map(({ ev, col, cols }) => {
+            const chore = ev.id.startsWith('chore-')
+            const Icon = iconFor(ev)
+            const top = (Math.max(ev.start, START) - START) * HOUR_PX
+            const slot = ev.id.startsWith('bath-') // 30-minute bathroom slots stay slim so neighbours don't overlap
+            const height = slot ? (Math.min(ev.end, END) - Math.max(ev.start, START)) * HOUR_PX - 3 : Math.max(54, (Math.min(ev.end, END) - Math.max(ev.start, START)) * HOUR_PX - 4)
+            const names = ev.who.map((id) => (id === 'you' ? 'You' : byId(id).name)).join(', ')
+            const title = ev.title.replace(EMOJI_LEAD, '')
+            return (
+              <button
+                key={ev.id}
+                type="button"
+                className={`vtl-ev${chore ? ' is-chore' : ''}${cols > 1 ? ' narrow' : ''}${slot ? ' slot' : ''}`}
+                style={{ top, height, left: `${(col / cols) * 100}%`, width: `calc(${100 / cols}% - 6px)`, '--c': ev.color } as React.CSSProperties}
+                aria-label={chore ? `${title}. Chore, ${timeLabel(ev.start)}` : `Edit ${title}, ${timeLabel(ev.start)} to ${timeLabel(ev.end)}`}
+                onClick={(e) => { e.stopPropagation(); if (!chore) onEdit(ev) }}
+              >
+                <span className="vtl-ico" aria-hidden><Icon size={slot ? 16 : cols > 1 ? 18 : 22} /></span>
+                <span className="vtl-txt">
+                  <b>{slot ? `${title} · ${names}` : title}</b>
+                  {!slot && <small>{cols > 1 ? timeLabel(ev.start) : `${timeLabel(ev.start)} · ${names}${ev.repeat && ev.repeat !== 'none' ? ' · ↻' : ''}`}</small>}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ───────── Add-event popup ───────── */
 
-const TIMES = Array.from({ length: SPAN * 2 + 1 }, (_, i) => START + i / 2) // 6:00am … 12:00am
+const TIMES = Array.from({ length: SPAN * 2 + 1 }, (_, i) => START + i / 2) // 12:00am … 12:00am
 
 type EventFields = Omit<CalEvent, 'id' | 'date' | 'color'>
 
-function EventPopup({ dayLabel, start: initialStart, existing, onSave, onDelete, onClose }: { dayLabel: string; start: number; existing?: CalEvent; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
-  const [title, setTitle] = useState(existing?.title ?? '')
+function RepeatFields({ repeat, until, onRepeat, onUntil, options = ['none', 'daily', 'weekdays', 'weekends', 'weekly'] }: { repeat: Repeat; until: string; onRepeat: (r: Repeat) => void; onUntil: (u: string) => void; options?: Repeat[] }) {
+  return (
+    <div className="ev-times">
+      <div className="field" style={repeat === 'none' ? { gridColumn: '1 / -1' } : undefined}>
+        <label htmlFor="rep-kind">Repeat</label>
+        <select id="rep-kind" className="input plain" value={repeat} onChange={(e) => onRepeat(e.target.value as Repeat)}>
+          {options.map((r) => <option key={r} value={r}>{repeatLabels[r]}</option>)}
+        </select>
+      </div>
+      {repeat !== 'none' && (
+        <div className="field">
+          <label htmlFor="rep-until">Until</label>
+          <input id="rep-until" className="input plain" type="date" value={until} min={iso(new Date())} onChange={(e) => onUntil(e.target.value)} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, onSave, onDelete, onClose }: { dayLabel: string; start: number; existing?: CalEvent; preset?: string; heading?: string; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
+  const [title, setTitle] = useState(existing?.title ?? preset ?? '')
   const [start, setStart] = useState(existing?.start ?? initialStart)
   const [end, setEnd] = useState(existing?.end ?? Math.min(initialStart + 1, END))
   const [who, setWho] = useState<string[]>(existing?.who ?? ['you'])
+  const [repeat, setRepeat] = useState<Repeat>(existing?.repeat ?? 'none')
+  const [until, setUntil] = useState(existing?.until ?? endOfYear())
   const clean = title.trim()
   const valid = clean.length > 0 && end > start && who.length > 0
 
@@ -141,10 +227,10 @@ function EventPopup({ dayLabel, start: initialStart, existing, onSave, onDelete,
         aria-labelledby="add-event-title"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
-        onSubmit={(e) => { e.preventDefault(); if (valid) onSave({ title: clean, start, end, who }) }}
+        onSubmit={(e) => { e.preventDefault(); if (valid) onSave({ title: clean, start, end, who, repeat, until: repeat === 'none' ? undefined : until }) }}
       >
         <div>
-          <h2 id="add-event-title">{existing ? 'Edit event' : 'Add event'}</h2>
+          <h2 id="add-event-title">{existing ? 'Edit event' : heading ?? 'Add event'}</h2>
           <div className="muted" style={{ fontWeight: 700, fontSize: 14 }}>{dayLabel}</div>
         </div>
         <div className="field">
@@ -176,6 +262,7 @@ function EventPopup({ dayLabel, start: initialStart, existing, onSave, onDelete,
             ))}
           </div>
         </fieldset>
+        <RepeatFields repeat={repeat} until={until} onRepeat={setRepeat} onUntil={setUntil} />
         <div className="modal-actions">
           {existing && onDelete && <button type="button" className="btn sm ghost danger-text" onClick={onDelete} style={{ marginRight: 'auto' }}><Trash2 size={16} aria-hidden /> Delete</button>}
           <button type="button" className="btn sm ghost" onClick={onClose}>Cancel</button>
@@ -274,51 +361,12 @@ function HomeTimesPopup({ dayLabel, initial, onSave, onClose }: { dayLabel: stri
 
 /* ───────── Events list for the selected day ───────── */
 
-function EventList({ events, onEdit }: { events: CalEvent[]; onEdit: (e: CalEvent) => void }) {
-  return (
-    <>
-      <div className="section-head" style={{ marginTop: 20 }}><h2>Events</h2></div>
-      {events.length === 0 ? (
-        <p className="more">No events this day yet. Tap the chart to add one.</p>
-      ) : (
-        <div className="stack">
-          {events.map((e, i) => {
-            const t = timeLabel(e.start)
-            const chore = e.id.startsWith('chore-')
-            const body = (
-              <>
-                <span className="time">{t.slice(0, -2)}<small>{t.slice(-2)}</small></span>
-                <span className="bar" style={{ background: e.color }} />
-                <span className="grow">
-                  <span className="ev-title">{e.title}</span>
-                  <span className="muted ev-when">{timeLabel(e.start)} – {timeLabel(e.end)}</span>
-                  <span className="ev-people"><AvatarStack ids={e.who} size={28} /></span>
-                </span>
-                {chore ? <Chip tone="teal">Chore</Chip> : <span className="ev-edit"><Pencil size={16} aria-hidden /> Edit</span>}
-              </>
-            )
-            return chore ? (
-              <Link to="/app/chores" className="card event event-btn pop" key={e.id} style={{ '--i': i } as React.CSSProperties} aria-label={`${e.title}. Open in Chores`}>
-                {body}
-              </Link>
-            ) : (
-              <button type="button" className="card event event-btn pop" key={e.id} style={{ '--i': i } as React.CSSProperties} onClick={() => onEdit(e)} aria-label={`${e.title}, ${timeLabel(e.start)} to ${timeLabel(e.end)}. Edit event`}>
-                {body}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </>
-  )
-}
-
 /* ───────── Bathroom slots & parking (unchanged) ───────── */
 
 const ME = 'you' // the logged-in roommate (Natalie) in this prototype
 const HOME_KEY = 'harmony.myHome'
 const BATH_KEY = 'harmony.bathroom'
-type BathSlot = { who: string; start: number } // 30-minute slots
+type BathSlot = { who: string; start: number; repeat?: Repeat; until?: string } // 30-minute slots, every day unless set
 
 const sampleBath: BathSlot[] = [
   { who: 'sofi', start: 7 }, { who: 'diego', start: 7.5 }, { who: 'you', start: 8 }, { who: 'mara', start: 21.5 },
@@ -332,12 +380,14 @@ function loadBath(): BathSlot[] {
   return sampleBath
 }
 
-const BATH_TIMES = Array.from({ length: SPAN * 2 }, (_, i) => START + i / 2) // 6:00am … 11:30pm
+const BATH_TIMES = Array.from({ length: SPAN * 2 }, (_, i) => START + i / 2) // 12:00am … 11:30pm
 
-function BathTimePopup({ current, taken, onSave, onClose }: { current: number | null; taken: BathSlot[]; onSave: (start: number) => void; onClose: () => void }) {
+function BathTimePopup({ current, currentRepeat, currentUntil, taken, onSave, onClose }: { current: number | null; currentRepeat?: Repeat; currentUntil?: string; taken: BathSlot[]; onSave: (start: number, repeat: Repeat, until?: string) => void; onClose: () => void }) {
   const firstFree = BATH_TIMES.find((t) => !taken.some((s) => s.start === t)) ?? START
   const [start, setStart] = useState(current ?? firstFree)
   const takenBy = (t: number) => taken.find((s) => s.start === t)
+  const [repeat, setRepeat] = useState<Repeat>(currentRepeat ?? 'daily')
+  const [until, setUntil] = useState(currentUntil ?? endOfYear())
 
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
@@ -348,7 +398,7 @@ function BathTimePopup({ current, taken, onSave, onClose }: { current: number | 
         aria-labelledby="bath-title"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
-        onSubmit={(e) => { e.preventDefault(); if (!takenBy(start)) onSave(start) }}
+        onSubmit={(e) => { e.preventDefault(); if (!takenBy(start)) onSave(start, repeat, until) }}
       >
         <div>
           <h2 id="bath-title">{current === null ? 'Pick your bathroom time' : 'Change your bathroom time'}</h2>
@@ -363,6 +413,7 @@ function BathTimePopup({ current, taken, onSave, onClose }: { current: number | 
             })}
           </select>
         </div>
+        <RepeatFields repeat={repeat} until={until} onRepeat={setRepeat} onUntil={setUntil} options={['daily', 'weekdays', 'weekends']} />
         <div className="modal-actions">
           <button type="button" className="btn sm ghost" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn sm">Save time</button>
@@ -370,45 +421,6 @@ function BathTimePopup({ current, taken, onSave, onClose }: { current: number | 
       </form>
     </div>,
     document.body,
-  )
-}
-
-function Bathroom() {
-  const [slots, setSlots] = useState<BathSlot[]>(loadBath)
-  const [editing, setEditing] = useState(false)
-  const update = (next: BathSlot[]) => {
-    setSlots(next)
-    try { sessionStorage.setItem(BATH_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
-  }
-  const mine = slots.find((s) => s.who === ME) ?? null
-  const others = slots.filter((s) => s.who !== ME)
-  const sorted = [...slots].sort((a, b) => a.start - b.start)
-
-  return (
-    <>
-      <div className="section-head" style={{ marginTop: 20 }}><h2>Bathroom slots</h2><Chip tone="purple">30 min each</Chip></div>
-      <div className="slot-grid">
-        {sorted.map((s) => (
-          <div key={s.who + s.start} className="slot">
-            <b>{timeLabel(s.start)}</b>
-            <Avatar id={s.who} size={28} />
-            <span>{byId(s.who).name}</span>
-          </div>
-        ))}
-      </div>
-      <button type="button" className="slot open slot-action" onClick={() => setEditing(true)}>
-        {mine ? <><Pencil size={16} aria-hidden /> Edit your time</> : <><Plus size={18} aria-hidden /> Pick your time</>}
-      </button>
-
-      {editing && (
-        <BathTimePopup
-          current={mine?.start ?? null}
-          taken={others}
-          onSave={(start) => { update([...others, { who: ME, start }]); setEditing(false) }}
-          onClose={() => setEditing(false)}
-        />
-      )}
-    </>
   )
 }
 
@@ -441,6 +453,20 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [adding, setAdding] = useState<number | null>(null)
   const [editing, setEditing] = useState<CalEvent | null>(null)
+  const navigate = useNavigate()
+  const [menu, setMenu] = useState(false)
+  const [pendingStart, setPendingStart] = useState<number | null>(null) // time tapped on the day, kept while you choose what to add
+  const askWhatToAdd = (h?: number) => { setPendingStart(h ?? null); setMenu(true) }
+  const startAt = () => pendingStart ?? nextHalfHour()
+  const [reserving, setReserving] = useState(false)
+  const [reserve, setReserve] = useState<string | null>(null)
+  const [bath, setBath] = useState<BathSlot[]>(loadBath)
+  const [editingBath, setEditingBath] = useState(false)
+  const saveBath = (next: BathSlot[]) => {
+    setBath(next)
+    try { sessionStorage.setItem(BATH_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
+  }
+  const myBath = bath.find((s) => s.who === ME) ?? null
   const [myHome, setMyHome] = useState<Record<string, Ranges>>(() => {
     try { return JSON.parse(sessionStorage.getItem(HOME_KEY) ?? '{}') as Record<string, Ranges> } catch { return {} }
   })
@@ -465,8 +491,14 @@ export default function Calendar() {
   const nowH = hoursOf(now)
   const isToday = day === today
 
-  const dayEvents = events.filter((e) => e.date === day).sort((a, b) => a.start - b.start)
-  const shown = [...dayEvents, ...choresToEvents(chores, day)].sort((a, b) => a.start - b.start)
+  const dayEvents = events.filter((e) => occursOn(e, day)).sort((a, b) => a.start - b.start)
+  // Bathroom slots live in the calendar too: one 30-minute card per roommate, every day.
+  const bathEvents: CalEvent[] = bath.filter((s) => occursOn({ date: '2000-01-01', repeat: s.repeat ?? 'daily', until: s.until }, day)).map((s) => ({ id: `bath-${s.who}`, date: day, start: s.start, end: s.start + 0.5, title: 'Bathroom', who: [s.who], color: 'var(--blue-d)' }))
+  const shown = [...dayEvents, ...choresToEvents(chores, day), ...bathEvents].sort((a, b) => a.start - b.start)
+  const openEvent = (ev: CalEvent) => {
+    if (ev.id.startsWith('bath-')) { if (ev.who[0] === ME) setEditingBath(true); return }
+    setEditing(ev)
+  }
   const dayLabel = selected.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
 
   // The yellow button starts a new event at the next half hour (or 6pm when viewing another day).
@@ -477,7 +509,7 @@ export default function Calendar() {
   }
   useEffect(() => {
     if (params.get('add') !== '1') return
-    setAdding(nextHalfHour())
+    askWhatToAdd(nextHalfHour())
     const next = new URLSearchParams(params)
     next.delete('add')
     setParams(next, { replace: true })
@@ -505,10 +537,11 @@ export default function Calendar() {
   }
 
   const addEvent = (e: EventFields) => {
-    const next = [...events, { ...e, id: `e${Date.now()}-${idSeq.current++}`, date: day, color: NEW_EVENT_COLOR }]
+    const next = [...events, { ...e, id: `e${Date.now()}-${idSeq.current++}`, date: day, color: reserve ? 'var(--blue-d)' : NEW_EVENT_COLOR }]
     setEvents(next)
     saveEvents(next)
     setAdding(null)
+    setReserve(null)
   }
 
   const dayStrip = (
@@ -522,7 +555,7 @@ export default function Calendar() {
         <div className="day-strip">
           {week.map((d) => {
             const k = dateKey(d)
-            const hasMark = events.some((e) => e.date === k) || chores.some((c) => c.date === k && !c.done)
+            const hasMark = events.some((e) => occursOn(e, k)) || chores.some((c) => c.date === k && !c.done)
             return (
               <button className={`day${k === today ? ' today' : ''}`} key={k} aria-pressed={day === k} onClick={() => setDay(k)} aria-label={`${d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}${hasMark ? ', has plans' : ''}`}>
                 <small>{k === today ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' })}</small>
@@ -539,20 +572,63 @@ export default function Calendar() {
 
   return (
     <>
-      <PageHead title="Calendar" />
-      <Segmented options={['Schedule', 'Parking']} onChange={setTab} />
-      <div style={{ height: 16 }} />
+      <PageHead title="Calendar" right={tab !== 2 ? <button type="button" className="cal-plus" aria-label="Add to the calendar" onClick={() => askWhatToAdd()}><Plus size={24} strokeWidth={3} aria-hidden /></button> : undefined} />
+      <div className="cal-sticky">
+        <Segmented options={['Schedule', 'Who’s home', 'Parking']} onChange={setTab} />
+        {tab !== 2 && <div className="cal-week">{dayStrip}</div>}
+      </div>
       {tab === 0 && (
         <>
-          <Chart days={dayStrip} isToday={isToday} nowH={nowH} events={shown} homeOf={homeOf} onPick={(h) => setAdding(h)} onEdit={setEditing} onEditHome={() => setEditingHome(true)} />
-          <EventList events={shown} onEdit={setEditing} />
-          <Bathroom />
+          <div className="section-head vtl-head"><h2>{dayLabel}</h2><Chip tone="purple">{shown.length} {shown.length === 1 ? 'plan' : 'plans'}</Chip></div>
+          <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} />
         </>
       )}
-      {tab === 1 && <Parking />}
-      {tab === 0 && <button className="fab" aria-label="Add event" onClick={() => setAdding(nextHalfHour())}><Plus size={30} aria-hidden /><span className="fab-label">Add event</span></button>}
+      {tab === 1 && (
+        <>
+          <div className="section-head vtl-head"><h2>{dayLabel}</h2></div>
+          <WhoIsHome isToday={isToday} nowH={nowH} homeOf={homeOf} onEditHome={() => setEditingHome(true)} />
+        </>
+      )}
+      {tab === 2 && <Parking />}
 
-      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} onSave={addEvent} onClose={() => setAdding(null)} />}
+      <Sheet open={menu} title="What do you want to add?" icon={<Plus aria-hidden />} tone="bg-purple" onClose={() => setMenu(false)}>
+        <div className="add-menu">
+          <button type="button" className="add-opt" onClick={() => { setMenu(false); setAdding(startAt()) }}>
+            <span className="add-ico" aria-hidden><CalendarDays size={22} /></span>
+            <span className="grow"><b>Event</b><small>Dinner, guests, plans for everyone</small></span>
+          </button>
+          <button type="button" className="add-opt" onClick={() => { setMenu(false); setReserving(true) }}>
+            <span className="add-ico" aria-hidden><KeyRound size={22} /></span>
+            <span className="grow"><b>Reservation</b><small>Bathroom, kitchen, living room</small></span>
+          </button>
+          <button type="button" className="add-opt" onClick={() => { setMenu(false); navigate('/app/chores?add=1') }}>
+            <span className="add-ico" aria-hidden><ClipboardList size={22} /></span>
+            <span className="grow"><b>Chore</b><small>Who does what, and when</small></span>
+          </button>
+        </div>
+      </Sheet>
+      <Sheet open={reserving} title="What do you want to reserve?" icon={<KeyRound aria-hidden />} tone="bg-purple" onClose={() => setReserving(false)}>
+        <div className="add-menu">
+          {[{ n: 'Bathroom', icon: ShowerHead, hint: myBath ? `Your slot: ${timeLabel(myBath.start)}` : '30-minute slot' }, { n: 'Kitchen', icon: UtensilsCrossed, hint: 'Cooking or hosting' }, { n: 'Living room', icon: Sofa, hint: 'Friends over, study session' }].map(({ n, icon: Icon, hint }) => (
+            <button key={n} type="button" className="add-opt" onClick={() => { setReserving(false); if (n === 'Bathroom') setEditingBath(true); else { setReserve(n); setAdding(startAt()) } }}>
+              <span className="add-ico" aria-hidden><Icon size={22} /></span>
+              <span className="grow"><b>{n}</b><small>{hint}</small></span>
+            </button>
+          ))}
+        </div>
+      </Sheet>
+
+      {editingBath && (
+        <BathTimePopup
+          current={myBath?.start ?? null}
+          currentRepeat={myBath?.repeat}
+          currentUntil={myBath?.until}
+          taken={bath.filter((s) => s.who !== ME)}
+          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false) }}
+          onClose={() => setEditingBath(false)}
+        />
+      )}
+      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
       {editingHome && <HomeTimesPopup key={day} dayLabel={dayLabel} initial={homeOf(ME)} onSave={saveHome} onClose={() => setEditingHome(false)} />}
       {editing && !editing.id.startsWith('chore-') && <EventPopup key={editing.id} dayLabel={dayLabel} start={editing.start} existing={editing} onSave={updateEvent} onDelete={deleteEvent} onClose={() => setEditing(null)} />}
 

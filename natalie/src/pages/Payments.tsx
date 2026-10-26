@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDownLeft, ArrowUpRight, BellRing, Check, CheckCircle2, Clock, HandCoins, Plus, ReceiptText, Send, Wallet, X } from 'lucide-react'
-import { Avatar, Chip, PageHead, PipSays, Sheet } from '../components/ui'
+import { Avatar, Chip, CountUp, PageHead, Sheet } from '../components/ui'
 import { byId, roommates } from '../data'
+import { celebrate } from '../celebrate'
 import { addDays, dayText, iso } from '../chores'
 import { isOverdue, kinds, owedToYou, share, totals, unpaid, usePayments, youOwe, type Bill, type Kind } from '../payments'
 
@@ -98,11 +100,14 @@ function NewBill({ open, onClose }: { open: boolean; onClose: () => void }) {
 function Payers({ b }: { b: Bill }) {
   return (
     <div className="payers" aria-label={`${b.split.length - unpaid(b).length} of ${b.split.length} paid`}>
+      <div className="segs" aria-hidden>
+        {b.split.map((id, i) => <i key={id} className={b.paid.includes(id) ? 'on' : ''} style={{ '--i': i } as React.CSSProperties} />)}
+      </div>
       {b.split.map((id) => {
         const paid = b.paid.includes(id)
         return (
           <span className={`payer${paid ? ' paid' : ''}`} key={id}>
-            <span className="payer-av"><Avatar id={id} size={34} /><i className="st" aria-hidden>{paid ? <Check size={11} strokeWidth={4} /> : <Clock size={11} strokeWidth={3} />}</i></span>
+            <i className="st" aria-hidden>{paid ? <Check size={12} strokeWidth={4} /> : <Clock size={12} strokeWidth={3} />}</i>
             <small>{id === 'you' ? 'You' : byId(id).name}<span className="sr-only">{paid ? ' paid' : ' hasn’t paid'}</span></small>
           </span>
         )
@@ -140,7 +145,7 @@ function BillCard({ b, i, onNudge, nudged }: { b: Bill; i: number; onNudge: (key
 
       {owe && (
         <div className="bill-actions">
-          <button className="btn sm venmo grow" onClick={() => markPaid(b.id, 'you')}><Send size={16} aria-hidden /> Pay {byId(b.payer).name} with Venmo</button>
+          <button className="btn sm venmo grow" onClick={(e) => { celebrate(e.currentTarget, 20); markPaid(b.id, 'you') }}><Send size={16} aria-hidden /> Pay {byId(b.payer).name} with Venmo</button>
         </div>
       )}
       {owed && (
@@ -149,10 +154,9 @@ function BillCard({ b, i, onNudge, nudged }: { b: Bill; i: number; onNudge: (key
             const key = `${b.id}-${id}`
             return (
               <div className="owed-row" key={id}>
-                <Avatar id={id} size={28} />
                 <span className="grow"><b>{byId(id).name}</b> <span className="muted">owes {money(share(b))}</span></span>
                 <button className="btn sm coral" onClick={() => onNudge(key)} disabled={nudged.includes(key)} aria-label={`Nudge ${byId(id).name}`}><BellRing size={15} aria-hidden />{nudged.includes(key) ? 'Sent' : ''}</button>
-                <button className="btn sm ghost" onClick={() => markPaid(b.id, id)}>Mark paid</button>
+                <button className="btn sm ghost" onClick={(e) => { celebrate(e.currentTarget, 10); markPaid(b.id, id) }}>Mark paid</button>
               </div>
             )
           })}
@@ -165,7 +169,15 @@ function BillCard({ b, i, onNudge, nudged }: { b: Bill; i: number; onNudge: (key
 
 export default function Payments() {
   const { bills } = usePayments()
-  const [sheet, setSheet] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const [sheet, setSheet] = useState(params.get('add') === '1')
+  useEffect(() => {
+    if (params.get('add') !== '1') return
+    setSheet(true)
+    const next = new URLSearchParams(params)
+    next.delete('add')
+    setParams(next, { replace: true })
+  }, [params, setParams])
   const [nudged, setNudged] = useState<string[]>([])
   const [filter, setFilter] = useState<'all' | 'owe' | 'owed'>('all')
   const toggleFilter = (f: 'owe' | 'owed') => setFilter((cur) => (cur === f ? 'all' : f))
@@ -187,21 +199,20 @@ export default function Payments() {
   return (
     <>
       <PageHead title="Bills" sub="Split fairly, paid back fast" />
-      <PipSays mood={owe === 0 ? 'cheer' : 'happy'}>
-        {owe > 0 ? `You owe ${money(owe)} this month. Venmo makes it quick!` : owed > 0 ? `Roomies still owe you ${money(owed)}.` : 'You’re all paid up. Roomie of the month!'}
-      </PipSays>
+      <div className="bills-layout">
+      <div className="bills-side">
 
       <div className="balance pop" role="group" aria-label="Filter bills">
         <button type="button" className="card tint-coral flat filter" aria-pressed={filter === 'owe'} onClick={() => toggleFilter('owe')}>
           <span className="bubble-ico bg-coral"><Wallet aria-hidden /></span>
           <span className="bal-label">You owe</span>
-          <b>{money(owe)}</b>
+          <b><CountUp value={owe} format={money} /></b>
           <span className="bal-count">{youOweBills.length} {youOweBills.length === 1 ? 'bill' : 'bills'}</span>
         </button>
         <button type="button" className="card tint-teal flat filter" aria-pressed={filter === 'owed'} onClick={() => toggleFilter('owed')}>
           <span className="bubble-ico bg-teal"><HandCoins aria-hidden /></span>
           <span className="bal-label">Owed to you</span>
-          <b>{money(owed)}</b>
+          <b><CountUp value={owed} format={money} /></b>
           <span className="bal-count">{owedBills.length} {owedBills.length === 1 ? 'bill' : 'bills'}</span>
         </button>
       </div>
@@ -211,11 +222,15 @@ export default function Payments() {
           : <button type="button" className="chip purple clear-filter" onClick={() => setFilter('all')}>Showing {filter === 'owe' ? 'what you owe' : 'what you’re owed'} <X size={14} aria-hidden /> <span className="sr-only">Show all bills</span></button>}
       </div>
 
+      </div>
+      <div className="bills-main">
       {filter !== 'owed' && section('You owe', <ArrowUpRight size={20} aria-hidden />, youOweBills, 'owe')}
       {filter !== 'owe' && section('Owed to you', <ArrowDownLeft size={20} aria-hidden />, owedBills, 'owed')}
       {filter === 'all' && section('Settled', <CheckCircle2 size={20} aria-hidden />, settled, 'settled')}
       {filter === 'owe' && youOweBills.length === 0 && <div className="more">🎉 You don’t owe anything right now.</div>}
       {filter === 'owed' && owedBills.length === 0 && <div className="more">Nobody owes you anything right now.</div>}
+      </div>
+      </div>
 
       <button className="fab" aria-label="Add bill" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">Add bill</span></button>
       <NewBill open={sheet} onClose={() => setSheet(false)} />

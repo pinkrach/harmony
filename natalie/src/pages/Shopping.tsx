@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { Plus, ShoppingBasket, Trash2 } from 'lucide-react'
-import { Avatar, Check, PageHead, PipSays } from '../components/ui'
+import { Avatar, Check, PageHead, Rail } from '../components/ui'
 import { byId, roommates } from '../data'
 import { useGroceries, type Item } from '../groceries'
 
@@ -87,25 +87,24 @@ export function GroceryList() {
 
   return (
     <>
-      <div className="card pop" style={{ '--i': 1 } as React.CSSProperties}>
-        {items.length === 0 ? (
-          <p className="muted grocery-empty">The list is empty. Tap “Add item” to add something.</p>
-        ) : (
-          items.map((it) => (
-            <div className={`shop-item${it.bought ? ' done' : ''}`} key={it.id}>
+      {items.length === 0 ? (
+        <p className="muted grocery-empty">The list is empty. Tap “Add item” to add something.</p>
+      ) : (
+        <div className="day-list tiles">
+          {items.map((it) => (
+            <div className={`day-row grocery${it.bought ? ' is-done' : ''}`} key={it.id}>
               <Check label={`Mark ${it.n} purchased`} xp={5} defaultOn={it.bought} onToggle={() => toggle(it.id)} />
-              <div className="grow nm">{it.n}</div>
-              <button type="button" className="assign-btn" onClick={() => setAssigning(it)} aria-label={`${byId(it.who).name} is getting ${it.n}. Change who`} title="Change who’s getting it">
-                <Avatar id={it.who} size={28} />
-                <span className="assign-name">{byId(it.who).name}</span>
-              </button>
+              <div className="day-txt">
+                <b>{it.n}</b>
+                <button type="button" className="who-link" onClick={() => setAssigning(it)} aria-label={`${byId(it.who).name} is getting ${it.n}. Change who`} title="Change who’s getting it">{it.bought ? `Bought by ${byId(it.who).name}` : `${byId(it.who).name} is getting it`}</button>
+              </div>
               <button type="button" className="icon-btn remove-btn" onClick={() => remove(it.id)} aria-label={`Remove ${it.n} from the list`} title="Remove from list">
                 <Trash2 size={18} aria-hidden />
               </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
       {assigning && <AssignPopup key={assigning.id} item={assigning} onSave={(who) => { assign(assigning.id, who); setAssigning(null) }} onClose={() => setAssigning(null)} />}
     </>
   )
@@ -131,7 +130,13 @@ export default function Shopping() {
   return (
     <>
       <PageHead title="Groceries" />
-      <PipSays mood="wow">Need dish soap? Roomies add it, you tick it off!</PipSays>
+
+      {items.length > 0 && (
+        <div className="bag-progress pop">
+          <Rail value={(items.filter((it) => it.bought).length / items.length) * 100} label={`${items.filter((it) => it.bought).length} of ${items.length} groceries in the bag`} />
+          <span><b>{items.filter((it) => it.bought).length}</b> of {items.length} in the bag</span>
+        </div>
+      )}
 
       {suggestions.length > 0 && (
         <div className="sugg pop" style={{ marginBottom: 16 }}>

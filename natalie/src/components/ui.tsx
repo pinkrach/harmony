@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Check as CheckIcon, X } from 'lucide-react'
 import { byId } from '../data'
 import { Pip } from './Pip'
+import { celebrate } from '../celebrate'
 
 export function Avatar({ id, size = 40, home, ring }: { id: string; size?: number; home?: boolean; ring?: boolean }) {
   const r = byId(id)
@@ -24,7 +25,7 @@ export function AvatarStack({ ids, size = 30 }: { ids: string[]; size?: number }
   )
 }
 
-export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple'; children: ReactNode }) {
+export function Chip({ tone = '', children }: { tone?: '' | 'teal' | 'coral' | 'yellow' | 'purple' | 'blue'; children: ReactNode }) {
   return <span className={`chip ${tone}`}>{children}</span>
 }
 
@@ -33,34 +34,19 @@ export function Toggle({ label, defaultOn = false }: { label: string; defaultOn?
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className="switch" onClick={() => setOn(!on)} />
 }
 
-const confettiColors = ['#ffc83d', '#e4684f', '#2e7d6b', '#7dcfb6', '#4fa38f']
 
-export function Check({ label, defaultOn = false, xp = 10, onToggle }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void }) {
+export function Check({ label, defaultOn = false, xp = 10, onToggle, locked = false }: { label: string; defaultOn?: boolean; xp?: number; onToggle?: () => void; locked?: boolean }) {
   const [on, setOn] = useState(defaultOn)
-  const [burst, setBurst] = useState(0)
-  const click = () => {
-    if (!on) {
-      setBurst(Date.now())
-      setTimeout(() => setBurst(0), 1000)
-    }
+  const click = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!on) celebrate(e.currentTarget, xp) // drawn outside this row, so it plays even if the row moves lists
     setOn(!on)
     onToggle?.()
   }
   return (
     <span className="check-wrap">
-      <button type="button" role="checkbox" aria-checked={on} aria-label={label} className="check" onClick={click}>
+      <button type="button" role="checkbox" aria-checked={on} aria-label={label} className={`check${locked ? ' locked' : ''}`} disabled={locked} onClick={click}>
         <CheckIcon size={18} strokeWidth={4} aria-hidden />
       </button>
-      {burst > 0 && (
-        <span className="burst" aria-hidden key={burst}>
-          {Array.from({ length: 12 }, (_, i) => {
-            const a = (i / 12) * Math.PI * 2
-            const d = 34 + (i % 3) * 12
-            return <i key={i} style={{ background: confettiColors[i % 5], ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d}px`, ['--rot' as string]: `${i * 70}deg` }} />
-          })}
-          <b>+{xp} XP</b>
-        </span>
-      )}
     </span>
   )
 }
@@ -141,4 +127,38 @@ export function Sheet({ open, title, icon, tone = 'bg-teal', onClose, children }
     </div>,
     document.body,
   )
+}
+
+/** Thin progress rail. Starts empty and eases to `value` (0–100). Clip-path only, so it never triggers layout. */
+export function Rail({ value, tone = 'mint', label, className = '' }: { value: number; tone?: 'mint' | 'brand' | 'yellow'; label: string; className?: string }) {
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(Math.max(0, Math.min(100, value))))
+    return () => cancelAnimationFrame(id)
+  }, [value])
+  return (
+    <div className={`rail ${tone} ${className}`} role="progressbar" aria-label={label} aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
+      <i style={{ clipPath: `inset(0 ${100 - shown}% 0 0 round 999px)` }} />
+    </div>
+  )
+}
+
+/** Number that counts up (or down) to `value` in ~600ms. Respects reduced motion. */
+export function CountUp({ value, format = (n: number) => String(Math.round(n)) }: { value: number; format?: (n: number) => string }) {
+  const [n, setN] = useState(0)
+  const from = useRef(0)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { from.current = value; setN(value); return }
+    const start = performance.now(); const a = from.current; let raf = 0
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / 600)
+      const eased = 1 - Math.pow(1 - k, 3)
+      const v = a + (value - a) * eased
+      from.current = v; setN(v)
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return <span aria-label={format(value)}>{format(n)}</span>
 }

@@ -1,6 +1,23 @@
 import type { Chore } from './chores'
 
-export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string }
+export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekends' | 'weekly'
+export const repeatLabels: Record<Repeat, string> = { none: 'Doesn’t repeat', daily: 'Every day', weekdays: 'Weekdays (Mon–Fri)', weekends: 'Weekends', weekly: 'Every week' }
+
+export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string; repeat?: Repeat; until?: string }
+
+/** Does something that starts on `date` and repeats (until `until`, inclusive) happen on `key`? */
+export function occursOn(e: { date: string; repeat?: Repeat; until?: string }, key: string) {
+  if (key === e.date) return true
+  if (!e.repeat || e.repeat === 'none' || key < e.date) return false
+  if (e.until && key > e.until) return false
+  const dow = new Date(`${key}T00:00`).getDay()
+  if (e.repeat === 'daily') return true
+  if (e.repeat === 'weekdays') return dow >= 1 && dow <= 5
+  if (e.repeat === 'weekends') return dow === 0 || dow === 6
+  return dow === new Date(`${e.date}T00:00`).getDay()
+}
+
+export const endOfYear = (d = new Date()) => `${d.getFullYear()}-12-31`
 
 const EVENTS_KEY = 'harmony.events'
 const END = 24
