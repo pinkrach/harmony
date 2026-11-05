@@ -3,7 +3,12 @@ import type { Chore } from './chores'
 export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekends' | 'weekly'
 export const repeatLabels: Record<Repeat, string> = { none: 'Doesn’t repeat', daily: 'Every day', weekdays: 'Weekdays (Mon–Fri)', weekends: 'Weekends', weekly: 'Every week' }
 
-export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string; repeat?: Repeat; until?: string }
+export type Rsvp = 'yes' | 'no'
+export type Note = { who: string; text: string }
+/** Someone else asked to move/resize this event; nothing changes until its owner approves. */
+export type Proposal = { by: string; start: number; end: number }
+/** `by` = who created it (missing on older saved events = you). `rsvp` = invited roommates' replies. */
+export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string; repeat?: Repeat; until?: string; by?: string; rsvp?: Record<string, Rsvp>; proposal?: Proposal }
 
 /** Does something that starts on `date` and repeats (until `until`, inclusive) happen on `key`? */
 export function occursOn(e: { date: string; repeat?: Repeat; until?: string }, key: string) {
@@ -46,9 +51,10 @@ export function choresToEvents(chores: Chore[], date: string): CalEvent[] {
 function sampleEvents(): CalEvent[] {
   const today = new Date()
   return [
-    { id: 's1', date: dateKey(today), start: 18.5, end: 19.5, title: 'Cook dinner together', who: ['you', 'sofi', 'mara'], color: 'var(--brand)' },
-    { id: 's2', date: dateKey(today), start: 21, end: 23, title: 'Movie night in the living room', who: ['you', 'diego', 'mara', 'sofi'], color: 'var(--purple)' },
-    { id: 's3', date: dateKey(addDays(today, 2)), start: 11, end: 12, title: 'Landlord visit · fix the sink', who: ['you'], color: 'var(--yellow-d)' },
+    { id: 's1', date: dateKey(today), start: 18.5, end: 19.5, title: 'Cook dinner together', who: ['you', 'sofi', 'mara'], color: 'var(--brand)', by: 'you', proposal: { by: 'sofi', start: 19, end: 21 } },
+    { id: 's2', date: dateKey(today), start: 21, end: 23, title: 'Movie night in the living room', who: ['you', 'diego', 'mara', 'sofi'], color: 'var(--purple)', by: 'diego', rsvp: { mara: 'yes' } },
+    { id: 's3', date: dateKey(addDays(today, 2)), start: 11, end: 12, title: 'Landlord visit · fix the sink', who: ['you'], color: 'var(--yellow-d)', by: 'you' },
+    { id: 's4', date: dateKey(addDays(today, 1)), start: 17, end: 18, title: 'Sofi & Mara · study session', who: ['sofi', 'mara'], color: 'var(--blue-d)', by: 'sofi' },
   ]
 }
 

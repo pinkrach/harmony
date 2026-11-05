@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { BellRing, CalendarDays, Check as CheckIcon, CheckCheck, ChevronDown, ClipboardPlus, Clock, CookingPot, Plus, Sofa, ShowerHead, Home as HomeIcon, type LucideIcon } from 'lucide-react'
 import { Avatar, Check, Chip, PageHead, Segmented, Sheet } from '../components/ui'
+import { Celebration, markSeen, wasSeen } from '../components/Moments'
 import { byId, roommates } from '../data'
 import { addDays, dayText, dueLabel, isLate, iso, nextSaturday, rooms, timeText, useChores, type Chore, type Room } from '../chores'
 
@@ -92,9 +93,11 @@ export default function Chores() {
   const [view, setView] = useState(0)
   const [closed, setClosed] = useState<Room[]>([])
 
+  const [cheer, setCheer] = useState(false)
   const addChore = (c: Omit<Chore, 'id' | 'done'>) => {
     add(c)
     setSheet(false)
+    if (!wasSeen('first-chore')) { markSeen('first-chore'); setCheer(true) }
   }
   const shown = chores.filter((c) => view === 1 || c.who === 'you')
   const left = shown.filter((c) => !c.done)
@@ -156,6 +159,7 @@ export default function Chores() {
 
       <button className="fab" aria-label="New chore" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">New chore</span></button>
       <NewChore open={sheet} onClose={() => setSheet(false)} onAdd={addChore} />
+      {cheer && <Celebration onClose={() => setCheer(false)}>You added your first chore! 🎉</Celebration>}
     </>
   )
 }

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, ClipboardList, Home, KeyRound, Plus, ShowerHead, Sofa, Trash2, UtensilsCrossed, Users, Wrench, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, ClipboardList, Clock, Home, KeyRound, Pencil, Plus, ShowerHead, Sofa, Trash2, UtensilsCrossed, Users, Wrench, X, type LucideIcon } from 'lucide-react'
 import { Avatar, Chip, Sheet } from '../components/ui'
+import { Celebration, Intro, markSeen, resetSeen, wasSeen } from '../components/Moments'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { iso } from '../chores'
+import { iso, type Chore } from '../chores'
 import { byId, hourLabel, presence, roommates } from '../data'
 import { useChores } from '../chores'
-import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, saveEvents, timeLabel, type CalEvent, type Repeat } from '../events'
+import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, saveEvents, timeLabel, type CalEvent, type Note, type Repeat, type Rsvp } from '../events'
 
 /* ───────── Time helpers ───────── */
 
@@ -121,8 +122,57 @@ function iconFor(ev: CalEvent): LucideIcon {
   return CalendarDays
 }
 
-function DayTimeline({ events, isToday, nowH, onPick, onEdit }: { events: CalEvent[]; isToday: boolean; nowH: number; onPick: (h: number) => void; onEdit: (e: CalEvent) => void }) {
+function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events: CalEvent[]; isToday: boolean; nowH: number; onPick: (h: number) => void; onEdit: (e: CalEvent) => void; onMove: (e: CalEvent, start: number, end: number) => void }) {
   const box = useRef<HTMLDivElement>(null)
+  const [drag, setDrag] = useState<{ id: string; start: number; end: number } | null>(null)
+  const dragged = useRef(false)
+
+  // Drag an event to move it, or drag its bottom grip to stretch/shrink it. Snaps to 30 minutes.
+  // Mouse: drag right away. Touch: press and hold a moment first, so scrolling still works.
+  const beginDrag = (e: React.PointerEvent, ev: CalEvent, mode: 'move' | 'resize') => {
+    if (e.button !== 0) return
+    if (mode === 'resize') e.stopPropagation()
+    const y0 = e.clientY
+    const touch = e.pointerType !== 'mouse'
+    const len = ev.end - ev.start
+    let active = false
+    let cur = { start: ev.start, end: ev.end }
+    const calc = (y: number) => {
+      const dh = Math.round(((y - y0) / HOUR_PX) * 2) / 2
+      if (mode === 'move') { const s = Math.min(END - len, Math.max(START, ev.start + dh)); return { start: s, end: s + len } }
+      return { start: ev.start, end: Math.min(END, Math.max(ev.start + 0.5, ev.end + dh)) }
+    }
+    const activate = () => { active = true; dragged.current = true; navigator.vibrate?.(8); setDrag({ id: ev.id, ...cur }) }
+    const timer = touch && mode === 'move' ? window.setTimeout(activate, 320) : undefined
+    if (mode === 'resize') activate()
+    const stopScroll = (t: TouchEvent) => { if (active) t.preventDefault() }
+    const move = (m: PointerEvent) => {
+      if (!active) {
+        if (Math.abs(m.clientY - y0) > 6) { if (!touch) activate(); else cleanup() } // finger moved first: that's a scroll
+        return
+      }
+      cur = calc(m.clientY)
+      setDrag({ id: ev.id, ...cur })
+    }
+    const up = () => {
+      const changed = active && (cur.start !== ev.start || cur.end !== ev.end)
+      cleanup()
+      if (changed) onMove(ev, cur.start, cur.end)
+    }
+    const cleanup = () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      document.removeEventListener('pointercancel', cleanup)
+      document.removeEventListener('touchmove', stopScroll)
+      setDrag(null)
+      window.setTimeout(() => { dragged.current = false }, 50)
+    }
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+    document.addEventListener('pointercancel', cleanup)
+    document.addEventListener('touchmove', stopScroll, { passive: false })
+  }
   // Land on the current hour when the page opens, so today's plans are in view.
   useEffect(() => {
     const el = box.current
@@ -151,25 +201,32 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit }: { events: CalEve
           {laid.map(({ ev, col, cols }) => {
             const chore = ev.id.startsWith('chore-')
             const Icon = iconFor(ev)
-            const top = (Math.max(ev.start, START) - START) * HOUR_PX
             const slot = ev.id.startsWith('bath-') // 30-minute bathroom slots stay slim so neighbours don't overlap
-            const height = slot ? (Math.min(ev.end, END) - Math.max(ev.start, START)) * HOUR_PX - 3 : Math.max(54, (Math.min(ev.end, END) - Math.max(ev.start, START)) * HOUR_PX - 4)
+            const movable = !chore && !slot
+            const live = drag?.id === ev.id ? drag : null
+            const evStart = live?.start ?? ev.start
+            const evEnd = live?.end ?? ev.end
+            const top = (Math.max(evStart, START) - START) * HOUR_PX
+            const height = slot ? (Math.min(evEnd, END) - Math.max(evStart, START)) * HOUR_PX - 3 : Math.max(54, (Math.min(evEnd, END) - Math.max(evStart, START)) * HOUR_PX - 4)
             const names = ev.who.map((id) => (id === 'you' ? 'You' : byId(id).name)).join(', ')
             const title = ev.title.replace(EMOJI_LEAD, '')
             return (
               <button
                 key={ev.id}
                 type="button"
-                className={`vtl-ev${chore ? ' is-chore' : ''}${cols > 1 ? ' narrow' : ''}${slot ? ' slot' : ''}`}
+                className={`vtl-ev${chore ? ' is-chore' : ''}${cols > 1 ? ' narrow' : ''}${slot ? ' slot' : ''}${live ? ' dragging' : ''}${ev.proposal ? ' has-proposal' : ''}`}
                 style={{ top, height, left: `${(col / cols) * 100}%`, width: `calc(${100 / cols}% - 6px)`, '--c': ev.color } as React.CSSProperties}
-                aria-label={chore ? `${title}. Chore, ${timeLabel(ev.start)}` : `Edit ${title}, ${timeLabel(ev.start)} to ${timeLabel(ev.end)}`}
-                onClick={(e) => { e.stopPropagation(); if (!chore) onEdit(ev) }}
+                aria-label={`Details for ${title}, ${timeLabel(ev.start)} to ${timeLabel(ev.end)}${movable ? '. Drag to move, or drag the bottom edge to change its length' : ''}`}
+                onPointerDown={movable ? (e) => beginDrag(e, ev, 'move') : undefined}
+                onClick={(e) => { e.stopPropagation(); if (dragged.current) return; onEdit(ev) }}
               >
                 <span className="vtl-ico" aria-hidden><Icon size={slot ? 16 : cols > 1 ? 18 : 22} /></span>
                 <span className="vtl-txt">
                   <b>{slot ? `${title} · ${names}` : title}</b>
-                  {!slot && <small>{cols > 1 ? timeLabel(ev.start) : `${timeLabel(ev.start)} · ${names}${ev.repeat && ev.repeat !== 'none' ? ' · ↻' : ''}`}</small>}
+                  {!slot && <small>{live ? `${timeLabel(evStart)} – ${timeLabel(evEnd)}` : cols > 1 ? timeLabel(ev.start) : `${timeLabel(ev.start)} · ${names}${ev.repeat && ev.repeat !== 'none' ? ' · ↻' : ''}`}</small>}
+                  {ev.proposal && !live && <small className="vtl-prop">⏳ Change requested</small>}
                 </span>
+                {movable && <span className="vtl-grip" aria-hidden onPointerDown={(e) => beginDrag(e, ev, 'resize')} />}
               </button>
             )
           })}
@@ -201,6 +258,87 @@ function RepeatFields({ repeat, until, onRepeat, onUntil, options = ['none', 'da
         </div>
       )}
     </div>
+  )
+}
+
+/* ───────── Event details (tap an event) ───────── */
+
+function EventDetails({ ev, dayLabel, notes, chore, onNote, onEdit, onDelete, onRsvp, onProposal, onBath, onChores, onClose }: { ev: CalEvent; dayLabel: string; notes: Note[]; chore?: Chore; onNote: (text: string) => void; onEdit: () => void; onDelete: () => void; onRsvp: (r: Rsvp) => void; onProposal: (a: 'approve' | 'decline' | 'cancel') => void; onBath: () => void; onChores: () => void; onClose: () => void }) {
+  const kind = ev.id.startsWith('chore-') ? 'chore' : ev.id.startsWith('bath-') ? 'bath' : 'event'
+  const creator = ev.by ?? ME
+  const mine = kind === 'event' && creator === ME
+  const invited = kind === 'event' && creator !== ME && ev.who.includes(ME)
+  const reply = ev.rsvp?.[ME]
+  const [draft, setDraft] = useState('')
+  const nameOf = (id: string) => (id === ME ? 'You' : byId(id).name)
+  const status = (id: string) => (id === creator ? 'Host' : ev.rsvp?.[id] === 'yes' ? 'Going' : ev.rsvp?.[id] === 'no' ? 'Declined' : 'Invited')
+  const when = `${dayLabel} · ${timeLabel(ev.start)} – ${timeLabel(ev.end)}${ev.repeat && ev.repeat !== 'none' ? ` · ${repeatLabels[ev.repeat]}` : ''}`
+  const prop = ev.proposal
+  const post = () => { const t = draft.trim(); if (t) { onNote(t); setDraft('') } }
+  return (
+    <Sheet open title={kind === 'chore' ? 'Chore details' : kind === 'bath' ? 'Bathroom slot' : 'Event details'} icon={kind === 'chore' ? <ClipboardList aria-hidden /> : kind === 'bath' ? <ShowerHead aria-hidden /> : <CalendarDays aria-hidden />} tone="bg-purple" onClose={onClose}>
+      <div className="ev-det">
+        <h3 className="ev-det-title">{ev.title.replace(EMOJI_LEAD, '')}</h3>
+        <div className="ev-det-row"><Clock size={20} aria-hidden /><span>{when}</span></div>
+        {kind === 'event' && <div className="ev-det-row"><Pencil size={20} aria-hidden /><span>{mine ? 'Created by you' : `Created by ${byId(creator).name}`}</span></div>}
+        {kind === 'bath' && <>
+          <div className="ev-det-row"><ShowerHead size={20} aria-hidden /><span>Main bathroom · 30-minute slot</span></div>
+          <div className="ev-det-person"><Avatar id={ev.who[0]} size={34} /><span className="grow"><b>{nameOf(ev.who[0])}</b></span><small className="ev-det-status host">Slot owner</small></div>
+        </>}
+        {kind === 'chore' && chore && <>
+          <div className="ev-det-row"><Home size={20} aria-hidden /><span>{chore.room}</span></div>
+          <div className="ev-det-person"><Avatar id={chore.who} size={34} /><span className="grow"><b>{nameOf(chore.who)}</b></span><small className={`ev-det-status ${chore.done ? 'going' : ''}`}>{chore.done ? 'Done' : 'To do'}</small></div>
+        </>}
+        {kind === 'event' && (
+          <div className="ev-det-people">
+            {[creator, ...ev.who.filter((w) => w !== creator)].map((id) => (
+              <div className="ev-det-person" key={id}><Avatar id={id} size={34} /><span className="grow"><b>{nameOf(id)}</b></span><small className={`ev-det-status ${status(id).toLowerCase()}`}>{status(id)}</small></div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {prop && (
+        <div className="ev-prop">
+          <b>{prop.by === ME ? 'You asked to change this' : `${byId(prop.by).name} asked to change this`}</b>
+          <span>New time: {timeLabel(prop.start)} – {timeLabel(prop.end)} · not changed yet</span>
+          {mine && prop.by !== ME && (
+            <div className="ev-det-actions">
+              <button type="button" className="btn ghost" onClick={() => onProposal('decline')}><X size={18} aria-hidden /> Decline</button>
+              <button type="button" className="btn" onClick={() => onProposal('approve')}><Check size={18} aria-hidden /> Approve</button>
+            </div>
+          )}
+          {prop.by === ME && <button type="button" className="btn sm ghost" onClick={() => onProposal('cancel')}>Cancel request</button>}
+        </div>
+      )}
+
+      <div className="ev-notes">
+        <h4>Notes</h4>
+        {notes.length === 0 && <p className="muted ev-notes-empty">No notes yet.</p>}
+        {notes.map((n, i) => (
+          <div className="ev-note" key={i}><Avatar id={n.who} size={28} /><div><b>{nameOf(n.who)}</b><p>{n.text}</p></div></div>
+        ))}
+        <form className="ev-note-form" onSubmit={(e) => { e.preventDefault(); post() }}>
+          <input className="input plain" placeholder="Leave a note for your roommates" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={140} aria-label="Add a note" />
+          <button type="submit" className="btn sm" disabled={!draft.trim()}>Post</button>
+        </form>
+      </div>
+
+      {invited && (
+        <div className="ev-det-actions">
+          <button type="button" className={`btn${reply === 'yes' ? '' : ' ghost'}`} onClick={() => onRsvp('yes')}><Check size={18} aria-hidden /> {reply === 'yes' ? 'You’re going' : 'Accept'}</button>
+          <button type="button" className={`btn${reply === 'no' ? '' : ' ghost'}`} onClick={() => onRsvp('no')}><X size={18} aria-hidden /> {reply === 'no' ? 'You declined' : 'Decline'}</button>
+        </div>
+      )}
+      {mine && (
+        <div className="ev-det-actions">
+          <button type="button" className="btn ghost danger-text" onClick={onDelete}><Trash2 size={18} aria-hidden /> Delete</button>
+          <button type="button" className="btn" onClick={onEdit}><Pencil size={18} aria-hidden /> Edit</button>
+        </div>
+      )}
+      {kind === 'bath' && ev.who[0] === ME && <div className="ev-det-actions"><button type="button" className="btn" onClick={onBath}><Clock size={18} aria-hidden /> Change my time</button></div>}
+      {kind === 'chore' && <div className="ev-det-actions"><button type="button" className="btn" onClick={onChores}><ClipboardList size={18} aria-hidden /> Open in Chores</button></div>}
+    </Sheet>
   )
 }
 
@@ -364,6 +502,19 @@ function HomeTimesPopup({ dayLabel, initial, onSave, onClose }: { dayLabel: stri
 /* ───────── Bathroom slots & parking (unchanged) ───────── */
 
 const ME = 'you' // the logged-in roommate (Natalie) in this prototype
+const NOTES_KEY = 'harmony.notes'
+const sampleNotes: Record<string, Note[]> = {
+  s2: [{ who: 'mara', text: 'I’ll bring popcorn 🍿' }, { who: 'diego', text: 'Picking the movie. Vote in the group chat!' }],
+  'bath-sofi': [{ who: 'sofi', text: 'I take about 20 min. Fan stays on, please don’t turn it off.' }],
+  'bath-diego': [{ who: 'diego', text: 'Quick shower, out by 7:45.' }],
+}
+function loadNotes(): Record<string, Note[]> {
+  try {
+    const saved = sessionStorage.getItem(NOTES_KEY)
+    if (saved) return JSON.parse(saved) as Record<string, Note[]>
+  } catch { /* storage unavailable */ }
+  return sampleNotes
+}
 const HOME_KEY = 'harmony.myHome'
 const BATH_KEY = 'harmony.bathroom'
 type BathSlot = { who: string; start: number; repeat?: Repeat; until?: string } // 30-minute slots, every day unless set
@@ -433,6 +584,13 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [adding, setAdding] = useState<number | null>(null)
   const [editing, setEditing] = useState<CalEvent | null>(null)
+  const [viewing, setViewing] = useState<CalEvent | null>(null)
+  const [pendingMove, setPendingMove] = useState<{ ev: CalEvent; start: number; end: number } | null>(null)
+  const [notes, setNotes] = useState<Record<string, Note[]>>(loadNotes)
+  // First-time moments: a welcome the first time you open the calendar, and a cheer for your first reservation / event.
+  const [intro, setIntro] = useState(() => (params.get('reset') === '1' ? (resetSeen(), true) : !wasSeen('calendar-intro')))
+  const [cheer, setCheer] = useState<'reservation' | 'event' | null>(null)
+  const firstWin = (kind: 'reservation' | 'event') => { if (!wasSeen(`first-${kind}`)) { markSeen(`first-${kind}`); setCheer(kind) } }
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
   const [pendingStart, setPendingStart] = useState<number | null>(null) // time tapped on the day, kept while you choose what to add
@@ -475,9 +633,26 @@ export default function Calendar() {
   // Bathroom slots live in the calendar too: one 30-minute card per roommate, every day.
   const bathEvents: CalEvent[] = bath.filter((s) => occursOn({ date: '2000-01-01', repeat: s.repeat ?? 'daily', until: s.until }, day)).map((s) => ({ id: `bath-${s.who}`, date: day, start: s.start, end: s.start + 0.5, title: 'Bathroom', who: [s.who], color: 'var(--blue-d)' }))
   const shown = [...dayEvents, ...choresToEvents(chores, day), ...bathEvents].sort((a, b) => a.start - b.start)
-  const openEvent = (ev: CalEvent) => {
-    if (ev.id.startsWith('bath-')) { if (ev.who[0] === ME) setEditingBath(true); return }
-    setEditing(ev)
+  const openEvent = (ev: CalEvent) => setViewing(ev)
+  const addNote = (id: string, text: string) => {
+    const next = { ...notes, [id]: [...(notes[id] ?? []), { who: ME, text }] }
+    setNotes(next)
+    try { sessionStorage.setItem(NOTES_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
+  }
+  // After a drag: your own events change right away (after you confirm); someone else's only get a request.
+  const confirmMove = () => {
+    if (!pendingMove) return
+    const { ev, start, end } = pendingMove
+    const own = (ev.by ?? ME) === ME
+    store(events.map((e) => (e.id === ev.id ? (own ? { ...e, start, end, proposal: undefined } : { ...e, proposal: { by: ME, start, end } }) : e)))
+    setPendingMove(null)
+  }
+  const answerProposal = (a: 'approve' | 'decline' | 'cancel') => {
+    if (!viewing?.proposal) return
+    const { start, end } = viewing.proposal
+    const next: CalEvent = a === 'approve' ? { ...viewing, start, end, proposal: undefined } : { ...viewing, proposal: undefined }
+    store(events.map((e) => (e.id === viewing.id ? next : e)))
+    setViewing(next)
   }
   const dayLabel = selected.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
 
@@ -517,11 +692,12 @@ export default function Calendar() {
   }
 
   const addEvent = (e: EventFields) => {
-    const next = [...events, { ...e, id: `e${Date.now()}-${idSeq.current++}`, date: day, color: reserve ? 'var(--blue-d)' : NEW_EVENT_COLOR }]
+    const next = [...events, { ...e, id: `e${Date.now()}-${idSeq.current++}`, date: day, by: ME, color: reserve ? 'var(--blue-d)' : NEW_EVENT_COLOR }]
     setEvents(next)
     saveEvents(next)
     setAdding(null)
     setReserve(null)
+    firstWin(reserve ? 'reservation' : 'event')
   }
 
   const dayStrip = (
@@ -556,7 +732,7 @@ export default function Calendar() {
         <div className="cal-week">{dayStrip}</div>
       </div>
       <div className="section-head vtl-head"><h2>{dayLabel}</h2><Chip tone="purple">{shown.length} {shown.length === 1 ? 'plan' : 'plans'}</Chip></div>
-      <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} />
+      <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} onMove={(ev, start, end) => setPendingMove({ ev, start, end })} />
 
       <Sheet open={menu} title="What do you want to add?" icon={<Plus aria-hidden />} tone="bg-purple" onClose={() => setMenu(false)}>
         <div className="add-menu">
@@ -591,12 +767,53 @@ export default function Calendar() {
           currentRepeat={myBath?.repeat}
           currentUntil={myBath?.until}
           taken={bath.filter((s) => s.who !== ME)}
-          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false) }}
+          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false); if (!myBath) firstWin('reservation') }}
           onClose={() => setEditingBath(false)}
         />
       )}
       {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
       {editingHome && <HomeTimesPopup key={day} dayLabel={dayLabel} initial={homeOf(ME)} onSave={saveHome} onClose={() => setEditingHome(false)} />}
+      {viewing && (
+        <EventDetails
+          ev={viewing}
+          dayLabel={dayLabel}
+          notes={notes[viewing.id] ?? []}
+          chore={viewing.id.startsWith('chore-') ? chores.find((c) => `chore-${c.id}` === viewing.id) : undefined}
+          onNote={(t) => addNote(viewing.id, t)}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing(viewing); setViewing(null) }}
+          onDelete={() => { store(events.filter((e) => e.id !== viewing.id)); setViewing(null) }}
+          onRsvp={(r) => { const next = { ...viewing, rsvp: { ...viewing.rsvp, [ME]: r } }; store(events.map((e) => (e.id === viewing.id ? next : e))); setViewing(next) }}
+          onProposal={answerProposal}
+          onBath={() => { setViewing(null); setEditingBath(true) }}
+          onChores={() => navigate('/app/chores')}
+        />
+      )}
+      {intro && (
+        <Intro button="Let’s go" onClose={() => { markSeen('calendar-intro'); setIntro(false); if (params.get('reset')) { const n = new URLSearchParams(params); n.delete('reset'); setParams(n, { replace: true }) } }}>
+          Plan your events and reserve a spot in your apartment here!
+        </Intro>
+      )}
+      {cheer && (
+        <Celebration onClose={() => setCheer(null)}>
+          {cheer === 'reservation' ? 'You made your first reservation! 🎉' : 'You scheduled your first event! 🎉'}
+        </Celebration>
+      )}
+      {pendingMove && (() => {
+        const { ev, start, end } = pendingMove
+        const own = (ev.by ?? ME) === ME
+        const title = ev.title.replace(EMOJI_LEAD, '')
+        return (
+          <Sheet open title={own ? 'Change this event?' : 'Send a change request?'} icon={<Clock aria-hidden />} tone="bg-purple" onClose={() => setPendingMove(null)}>
+            <p className="ev-confirm"><b>{title}</b><br />{timeLabel(ev.start)} – {timeLabel(ev.end)} → <b>{timeLabel(start)} – {timeLabel(end)}</b></p>
+            {!own && <p className="muted ev-confirm-note">This is {byId(ev.by ?? ME).name}’s event. It won’t change until they approve.</p>}
+            <div className="ev-det-actions">
+              <button type="button" className="btn ghost" onClick={() => setPendingMove(null)}>Keep as is</button>
+              <button type="button" className="btn" onClick={confirmMove}>{own ? 'Confirm' : 'Send request'}</button>
+            </div>
+          </Sheet>
+        )
+      })()}
       {editing && !editing.id.startsWith('chore-') && <EventPopup key={editing.id} dayLabel={dayLabel} start={editing.start} existing={editing} onSave={updateEvent} onDelete={deleteEvent} onClose={() => setEditing(null)} />}
 
     </>
