@@ -191,7 +191,7 @@ export default function Payments() {
 
   const section = (title: string, icon: React.ReactNode, list: Bill[], tone: string) => list.length > 0 && (
     <>
-      <div className={`section-head dir ${tone}`}><h2>{icon}{title}</h2><Chip tone={tone === 'owe' ? 'coral' : tone === 'owed' ? 'teal' : ''}>{list.length}</Chip></div>
+      <div className={`section-head dir ${tone}`}><h2>{icon}{title}</h2><Chip tone={tone === 'owe' ? 'yellow' : tone === 'owed' ? 'purple' : ''}>{list.length}</Chip></div>
       <div className="stack">{list.map((b) => <BillCard key={b.id} b={b} i={n++} onNudge={nudge} nudged={nudged} />)}</div>
     </>
   )
@@ -203,14 +203,14 @@ export default function Payments() {
       <div className="bills-side">
 
       <div className="balance pop" role="group" aria-label="Filter bills">
-        <button type="button" className="card tint-coral flat filter" aria-pressed={filter === 'owe'} onClick={() => toggleFilter('owe')}>
-          <span className="bubble-ico bg-coral"><Wallet aria-hidden /></span>
+        <button type="button" className="card tint-yellow flat filter" aria-pressed={filter === 'owe'} onClick={() => toggleFilter('owe')}>
+          <span className="bubble-ico bg-yellow"><Wallet aria-hidden /></span>
           <span className="bal-label">You owe</span>
           <b><CountUp value={owe} format={money} /></b>
           <span className="bal-count">{youOweBills.length} {youOweBills.length === 1 ? 'bill' : 'bills'}</span>
         </button>
-        <button type="button" className="card tint-teal flat filter" aria-pressed={filter === 'owed'} onClick={() => toggleFilter('owed')}>
-          <span className="bubble-ico bg-teal"><HandCoins aria-hidden /></span>
+        <button type="button" className="card tint-purple flat filter" aria-pressed={filter === 'owed'} onClick={() => toggleFilter('owed')}>
+          <span className="bubble-ico bg-purple"><HandCoins aria-hidden /></span>
           <span className="bal-label">Owed to you</span>
           <b><CountUp value={owed} format={money} /></b>
           <span className="bal-count">{owedBills.length} {owedBills.length === 1 ? 'bill' : 'bills'}</span>

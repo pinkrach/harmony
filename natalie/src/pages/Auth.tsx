@@ -30,14 +30,20 @@ export default function Auth() {
       {step !== 'choose' && (
         <button type="button" className="auth-back" aria-label="Back" onClick={back}><ArrowLeft aria-hidden /></button>
       )}
+      {step === 'choose' && (
+        <h1 className="auth-tagline">
+          <span>Living with roommates</span>
+          <span>has never been <em>easier.</em></span>
+        </h1>
+      )}
       <div className="auth-mark">
         <Pip size={140} mood="happy" wave />
       </div>
 
       {step === 'choose' && (
         <div className="auth-gate-actions">
-          <button type="button" className="btn block yellow" onClick={() => setStep('login')}>Log in</button>
-          <button type="button" className="btn block gate-signup" onClick={() => setStep('signup')}>Sign up</button>
+          <button type="button" className="btn block yellow" onClick={() => nav('/app/home')}>Log in</button>
+          <button type="button" className="btn block gate-signup" onClick={() => nav('/app/home')}>Sign up</button>
         </div>
       )}
 

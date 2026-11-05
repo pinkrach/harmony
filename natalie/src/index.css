@@ -1478,3 +1478,28 @@ html { background: color-mix(in srgb, var(--bg) 82%, #6b5fa8); }
 .confetti i { position: absolute; top: -24px; opacity: 0.95; animation: confetti-fall linear both; }
 @keyframes confetti-fall { to { top: 105%; translate: 30px 0; rotate: 540deg; } }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
+
+.auth-tagline { margin: 0 0 4px; max-width: 360px; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; color: #fff; font-family: var(--font-head); font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; animation: rise 0.55s var(--ease-pop) both; }
+.auth-tagline span:first-child { font-size: 19px; font-weight: 500; opacity: 0.88; }
+.auth-tagline span:last-child { font-size: 29px; }
+.auth-tagline em { font-style: normal; color: var(--yellow); background: linear-gradient(transparent 68%, rgba(255, 213, 90, 0.28) 68%, rgba(255, 213, 90, 0.28) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
+.auth-gate .auth-mark { position: relative; }
+.auth-gate .auth-mark::before { content: ''; position: absolute; left: 50%; top: 52%; width: 250px; height: 250px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 68%); pointer-events: none; }
+.auth-gate .auth-mark > * { position: relative; }
+@media (prefers-reduced-motion: reduce) { .auth-tagline { animation: none; } }
+
+/* Bills: butter yellow for what you owe, lavender for what you're owed (same family as the rest of the app) */
+.balance .card.tint-yellow { background: var(--yellow-l); border-color: var(--yellow-d); color: #6b4d00; }
+.balance .card.tint-purple { background: var(--purple-l); border-color: #d9d2f5; color: var(--purple-d); }
+.balance .card.tint-yellow b, .balance .card.tint-purple b { color: inherit; }
+.section-head.owe h2, .amt-col.owe .amt { color: #8a6400; }
+.section-head.owed h2, .amt-col.owed .amt { color: var(--purple-d); }
+.bill.owe { border-left-color: var(--yellow-d); }
+.bill.owed { border-left-color: #b9a8ee; }
+:root[data-theme='dark'] .balance .card.tint-yellow { background: #3d3520; color: #ffe08a; }
+:root[data-theme='dark'] .balance .card.tint-purple { background: #2d2650; color: #cdbdf7; border-color: #4a3f80; }
+:root[data-theme='dark'] .section-head.owe h2, :root[data-theme='dark'] .amt-col.owe .amt { color: #ffd966; }
+:root[data-theme='dark'] .section-head.owed h2, :root[data-theme='dark'] .amt-col.owed .amt { color: #cdbdf7; }
+.bill.owe { background: color-mix(in srgb, var(--yellow) 14%, var(--card)); border-color: color-mix(in srgb, var(--yellow-d) 45%, var(--line)); }
+.bill.owed { background: color-mix(in srgb, var(--brand) 7%, var(--card)); border-color: color-mix(in srgb, var(--brand) 22%, var(--line)); }
+.bill.late { background: color-mix(in srgb, var(--coral) 9%, var(--card)); border-color: color-mix(in srgb, var(--coral) 35%, var(--line)); }
