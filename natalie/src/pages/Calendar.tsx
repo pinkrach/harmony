@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, ClipboardList, Home, KeyRound, Plus, ShowerHead, Sofa, Trash2, UtensilsCrossed, Users, Wrench, type LucideIcon } from 'lucide-react'
-import { Avatar, Chip, PageHead, Segmented, Sheet } from '../components/ui'
+import { Avatar, Chip, Sheet } from '../components/ui'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { iso } from '../chores'
 import { byId, hourLabel, presence, roommates } from '../data'
@@ -424,30 +424,10 @@ function BathTimePopup({ current, currentRepeat, currentUntil, taken, onSave, on
   )
 }
 
-function Parking() {
-  return (
-    <div className="stack">
-      <div className="card tint-yellow row">
-        <span className="bubble-ico bg-yellow"><Car aria-hidden /></span>
-        <div className="grow"><b>Street permit · Zone B</b><div className="muted" style={{ fontSize: 14, fontWeight: 700 }}>One car at a time. Pick a time that works.</div></div>
-      </div>
-      <div className="perm pop"><div className="grow"><div className="when">Tue · 9:00am – 1:00pm</div><span className="muted" style={{ fontWeight: 700, fontSize: 14 }}>Available</span></div><button className="btn sm">Reserve permit</button></div>
-      <div className="perm taken pop" style={{ '--i': 1 } as React.CSSProperties}>
-        <div className="grow"><div className="when row"><AlertTriangle size={18} aria-hidden /> Tue · 2:00pm – 6:00pm</div><span style={{ fontWeight: 700, fontSize: 14 }}>Diego already has this one</span></div>
-        <button className="btn sm ghost">Choose another time</button>
-      </div>
-      <div className="perm pop" style={{ '--i': 2 } as React.CSSProperties}><div className="grow"><div className="when">Wed · 8:00am – 12:00pm</div><span className="muted" style={{ fontWeight: 700, fontSize: 14 }}>Available</span></div><button className="btn sm">Reserve permit</button></div>
-    </div>
-  )
-}
-
-/* ───────── Page ───────── */
-
 export default function Calendar() {
   const now = useNow()
   const today = dateKey(now)
   const [params, setParams] = useSearchParams()
-  const [tab, setTab] = useState(0)
   const [day, setDay] = useState(today)
   const [weekOffset, setWeekOffset] = useState(0) // 0 = this week, -1 = last week, 1 = next week…
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
@@ -572,24 +552,11 @@ export default function Calendar() {
 
   return (
     <>
-      <PageHead title="Calendar" right={tab !== 2 ? <button type="button" className="cal-plus" aria-label="Add to the calendar" onClick={() => askWhatToAdd()}><Plus size={24} strokeWidth={3} aria-hidden /></button> : undefined} />
       <div className="cal-sticky">
-        <Segmented options={['Schedule', 'Who’s home', 'Parking']} onChange={setTab} />
-        {tab !== 2 && <div className="cal-week">{dayStrip}</div>}
+        <div className="cal-week">{dayStrip}</div>
       </div>
-      {tab === 0 && (
-        <>
-          <div className="section-head vtl-head"><h2>{dayLabel}</h2><Chip tone="purple">{shown.length} {shown.length === 1 ? 'plan' : 'plans'}</Chip></div>
-          <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} />
-        </>
-      )}
-      {tab === 1 && (
-        <>
-          <div className="section-head vtl-head"><h2>{dayLabel}</h2></div>
-          <WhoIsHome isToday={isToday} nowH={nowH} homeOf={homeOf} onEditHome={() => setEditingHome(true)} />
-        </>
-      )}
-      {tab === 2 && <Parking />}
+      <div className="section-head vtl-head"><h2>{dayLabel}</h2><Chip tone="purple">{shown.length} {shown.length === 1 ? 'plan' : 'plans'}</Chip></div>
+      <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} />
 
       <Sheet open={menu} title="What do you want to add?" icon={<Plus aria-hidden />} tone="bg-purple" onClose={() => setMenu(false)}>
         <div className="add-menu">
