@@ -8,6 +8,8 @@ import { dueLabel, useChores } from '../chores'
 import { dateKey, loadEvents, reservedRoom, saveEvents, timeLabel, type CalEvent } from '../events'
 import { share, usePayments, youOwe } from '../payments'
 import { useHomeHealth } from '../health'
+import { castVote, freqLabel, loadDone, loadWheel, ownerOf, periodLeft, proposalText, saveDone, saveWheel, stepNow } from '../rotation'
+import { roommates } from '../data'
 
 const ME = 'you'
 
@@ -42,6 +44,9 @@ export default function Home() {
   const health = useHomeHealth()
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [now, setNow] = useState(() => new Date())
+  const [wheel, setWheel] = useState(loadWheel)
+  const [wheelDone, setWheelDone] = useState(loadDone)
+  const voteWheel = (id: string, v: 'yes' | 'no') => { const r = castVote(wheel, id, ME, v); setWheel(r.state); saveWheel(r.state) }
   // Reservations your roommates made stay here until you say you've seen them.
   const [seen, setSeen] = useState<string[]>(() => { try { return JSON.parse(sessionStorage.getItem('harmony.seenReservations') ?? '[]') as string[] } catch { return [] } })
   const markSeen = (id: string) => { const next = [...seen, id]; setSeen(next); try { sessionStorage.setItem('harmony.seenReservations', JSON.stringify(next)) } catch { /* storage unavailable */ } }
@@ -57,11 +62,18 @@ export default function Home() {
   const patch = (id: string, fields: Partial<CalEvent>) => store(events.map((e) => (e.id === id ? { ...e, ...fields } : e)))
 
   const mine = chores.filter((c) => c.who === ME)
-  const doneCount = mine.filter((c) => c.done).length
-  const pct = mine.length ? Math.round((doneCount / mine.length) * 100) : 100
+  // Your slice of the chore wheel counts too: it is part of what you have to do this round.
+  const wheelBase = stepNow(wheel.freq)
+  const wheelMine = wheel.packs.filter((_, k) => ownerOf(k, wheelBase, roommates.length) === 0).flatMap((p) => p.chores)
+  const wheelKey = (id: string) => `${wheel.freq}${wheelBase}:${id}`
+  const wheelDoneCount = wheelMine.filter((c) => wheelDone[wheelKey(c.id)]).length
+  const total = mine.length + wheelMine.length
+  const doneCount = mine.filter((c) => c.done).length + wheelDoneCount
+  const pct = total ? Math.round((doneCount / total) * 100) : 100
+  const markWheel = (id: string) => { const next = { ...wheelDone, [wheelKey(id)]: true }; setWheelDone(next); saveDone(next) }
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const allDone = mine.every((c) => c.done)
+  const allDone = doneCount === total
   const pool = allDone ? PRAISE : NAG
   const phrase = pool[(Math.floor(now.getTime() / 60000) + taps) % pool.length]
 
@@ -108,6 +120,16 @@ export default function Home() {
       })
     }
   }
+  // Your turn on the chore wheel.
+  const left = periodLeft(wheel.freq)
+  for (const c of wheelMine) {
+    if (wheelDone[wheelKey(c.id)]) continue
+    items.push({
+      key: `wheel-mine-${c.id}`, icon: <ClipboardList size={20} />, mins: wheel.freq === 'never' ? 9990 : left.days * 1440 + (1440 - nowMin),
+      title: `Your turn: ${c.t}`, sub: `Chore wheel${wheel.freq === 'never' ? '' : ` · ${freqLabel[wheel.freq]} · ${left.text.toLowerCase()}`}`,
+      actions: btn('Done', <Tick size={16} aria-hidden />, () => markWheel(c.id)),
+    })
+  }
   // Your chores that are due.
   for (const c of mine) {
     if (c.done || c.date > today) continue
@@ -128,6 +150,15 @@ export default function Home() {
       actions: <Link to="/app/payments" className="hm-btn">Pay</Link>,
     })
   }
+  // Suggested changes to the chore wheel wait for your vote.
+  for (const p of wheel.proposals) {
+    if (p.by === ME || p.votes[ME] === 'yes') continue
+    items.push({
+      key: `wheel-${p.id}`, icon: <ClipboardList size={20} />, mins: 9995,
+      title: proposalText(p, wheel.packs), sub: 'Everyone has to agree before the wheel changes',
+      actions: <>{btn('Decline', <X size={16} aria-hidden />, () => voteWheel(p.id, 'no'), true)}{btn('Agree', <Tick size={16} aria-hidden />, () => voteWheel(p.id, 'yes'))}</>,
+    })
+  }
   items.sort((a, b) => a.mins - b.mins)
 
   return (
@@ -144,14 +175,14 @@ export default function Home() {
               <span>{phrase}</span>
             </div>
             <button type="button" className="health-pip-btn" onClick={() => setTaps((n) => n + 1)} aria-label="Pip in your home. Tap to hear something new">
-              <RoomScene bare done={doneCount} total={mine.length} />
+              <RoomScene bare done={doneCount} total={total} />
             </button>
           </div>
           <div className="hprog hm-prog">
             <div className="hm-prog-main">
               <div className="hprog-top"><b>Your chores</b><span>{pct}%</span></div>
-              <Rail className="hprog-rail" value={pct} label={`${doneCount} of ${mine.length} of your chores done`} />
-              <small>{doneCount} of {mine.length} done</small>
+              <Rail className="hprog-rail" value={pct} label={`${doneCount} of ${total} of your chores done`} />
+              <small>{doneCount} of {total} done</small>
             </div>
             <Link to="/app/chores" className="hm-go">Go to chores</Link>
           </div>

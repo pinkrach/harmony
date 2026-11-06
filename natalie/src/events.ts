@@ -45,7 +45,7 @@ export function timeLabel(h: number) {
 
 /** Chores for a day, in the same shape the calendar draws. */
 export function choresToEvents(chores: Chore[], date: string): CalEvent[] {
-  return chores.filter((c) => c.date === date).map((c) => {
+  return chores.filter((c) => c.date === date && !(c.vis === 'private' && c.who !== 'you')).map((c) => {
     const [hh, mm] = (c.time || '09:00').split(':').map(Number)
     const start = hh + (mm || 0) / 60
     return { id: `chore-${c.id}`, date: c.date, start, end: Math.min(start + 0.5, END), title: `${c.emoji} ${c.t}`, who: [c.who], color: 'var(--mint)' }

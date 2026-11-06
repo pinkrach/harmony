@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 export const rooms = ['Kitchen', 'Living room', 'Bathroom', 'Other'] as const
 export type Room = (typeof rooms)[number]
-export type Chore = { id: number; t: string; emoji: string; who: string; date: string; time: string; done: boolean; room: Room }
+export type Chore = { id: number; t: string; emoji: string; who: string; date: string; time: string; done: boolean; room: Room; vis?: 'public' | 'private' }
 
 export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 export const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d }
@@ -18,11 +18,11 @@ export function dueLabel(c: Pick<Chore, 'date' | 'time'>) {
 export const isLate = (c: Chore) => !c.done && c.date < iso(addDays(0))
 
 const seed = (): Chore[] => [
-  { id: 1, t: 'Take out the trash', emoji: '🗑️', who: 'you', date: iso(addDays(0)), time: '20:00', done: false , room: 'Kitchen' },
-  { id: 2, t: 'Wash the dishes', emoji: '🍽️', who: 'diego', date: iso(addDays(-1)), time: '', done: false , room: 'Kitchen' },
-  { id: 3, t: 'Clean the bathroom', emoji: '🛁', who: 'mara', date: iso(addDays(2)), time: '10:00', done: false , room: 'Bathroom' },
-  { id: 4, t: 'Vacuum the living room', emoji: '🧹', who: 'sofi', date: iso(addDays(0)), time: '', done: true , room: 'Living room' },
-  { id: 5, t: 'Water the plants', emoji: '🪴', who: 'you', date: iso(addDays(0)), time: '', done: true , room: 'Living room' },
+  { id: 1, t: 'Do my dishes', emoji: '🍽️', who: 'you', date: iso(addDays(0)), time: '20:00', done: false, room: 'Kitchen' },
+  { id: 2, t: 'Wash my dishes', emoji: '🍽️', who: 'diego', date: iso(addDays(-1)), time: '', done: false, room: 'Kitchen' },
+  { id: 3, t: 'Clean my room', emoji: '🧹', who: 'mara', date: iso(addDays(2)), time: '10:00', done: false, room: 'Other', vis: 'private' },
+  { id: 4, t: 'Rake the leaves on the terrace', emoji: '🍂', who: 'sofi', date: iso(addDays(0)), time: '', done: true, room: 'Other' },
+  { id: 5, t: 'Make my bed', emoji: '🛏️', who: 'you', date: iso(addDays(0)), time: '', done: true, room: 'Other', vis: 'private' },
 ]
 
 type Store = { chores: Chore[]; reminded: number[]; remind: (id: number) => void; add: (c: Omit<Chore, 'id' | 'done'>) => void; toggle: (id: number) => void }
