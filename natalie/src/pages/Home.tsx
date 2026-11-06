@@ -8,7 +8,7 @@ import { dueLabel, useChores } from '../chores'
 import { dateKey, loadEvents, reservedRoom, saveEvents, timeLabel, type CalEvent } from '../events'
 import { share, usePayments, youOwe } from '../payments'
 import { useHomeHealth } from '../health'
-import { castVote, freqLabel, loadDone, loadWheel, ownerOf, periodLeft, proposalText, saveDone, saveWheel, stepNow } from '../rotation'
+import { castVote, loadDone, loadWheel, ownerOf, proposalText, saveWheel, stepNow } from '../rotation'
 import { roommates } from '../data'
 
 const ME = 'you'
@@ -45,7 +45,7 @@ export default function Home() {
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [now, setNow] = useState(() => new Date())
   const [wheel, setWheel] = useState(loadWheel)
-  const [wheelDone, setWheelDone] = useState(loadDone)
+  const [wheelDone] = useState(loadDone)
   const voteWheel = (id: string, v: 'yes' | 'no') => { const r = castVote(wheel, id, ME, v); setWheel(r.state); saveWheel(r.state) }
   // Reservations your roommates made stay here until you say you've seen them.
   const [seen, setSeen] = useState<string[]>(() => { try { return JSON.parse(sessionStorage.getItem('harmony.seenReservations') ?? '[]') as string[] } catch { return [] } })
@@ -70,7 +70,6 @@ export default function Home() {
   const total = mine.length + wheelMine.length
   const doneCount = mine.filter((c) => c.done).length + wheelDoneCount
   const pct = total ? Math.round((doneCount / total) * 100) : 100
-  const markWheel = (id: string) => { const next = { ...wheelDone, [wheelKey(id)]: true }; setWheelDone(next); saveDone(next) }
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const allDone = doneCount === total
@@ -120,27 +119,7 @@ export default function Home() {
       })
     }
   }
-  // Your turn on the chore wheel.
-  const left = periodLeft(wheel.freq)
-  for (const c of wheelMine) {
-    if (wheelDone[wheelKey(c.id)]) continue
-    items.push({
-      key: `wheel-mine-${c.id}`, icon: <ClipboardList size={20} />, mins: wheel.freq === 'never' ? 9990 : left.days * 1440 + (1440 - nowMin),
-      title: `Your turn: ${c.t}`, sub: `Chore wheel${wheel.freq === 'never' ? '' : ` · ${freqLabel[wheel.freq]} · ${left.text.toLowerCase()}`}`,
-      actions: btn('Done', <Tick size={16} aria-hidden />, () => markWheel(c.id)),
-    })
-  }
-  // Your chores that are due.
-  for (const c of mine) {
-    if (c.done || c.date > today) continue
-    const [hh, mm] = (c.time || '').split(':').map(Number)
-    const mins = c.date < today ? -1 : c.time ? hh * 60 + (mm || 0) - nowMin : 24 * 60 - nowMin
-    items.push({
-      key: `chore-${c.id}`, icon: <ClipboardList size={20} />, mins,
-      title: `Your turn: ${c.t}`, sub: dueLabel(c), left: leftText(mins),
-      actions: btn('Done', <Tick size={16} aria-hidden />, () => toggle(c.id)),
-    })
-  }
+  // Chores are not listed here: Pip and the progress card above already say how they are going.
   // Bills you still owe.
   for (const b of bills.filter(youOwe)) {
     const mins = b.date < today ? -1 : b.date === today ? 24 * 60 - nowMin : 9999
