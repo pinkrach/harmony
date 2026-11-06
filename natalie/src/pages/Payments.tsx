@@ -198,7 +198,6 @@ export default function Payments() {
 
   return (
     <>
-      <PageHead title="Bills" sub="Split fairly, paid back fast" />
       <div className="bills-layout">
       <div className="bills-side">
 

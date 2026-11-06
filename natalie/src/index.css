@@ -1612,3 +1612,10 @@ html { background: color-mix(in srgb, var(--bg) 82%, #6b5fa8); }
 .eo-own { font-size: 11px; font-weight: 800; color: var(--brand-d); text-decoration: none; }
 .eo-task .remind-btn, .eo-task .remind-done { flex: none; margin-left: auto; }
 .eo-note { margin: 0; display: flex; align-items: flex-start; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* Bills: the You owe / Owed to you cards stay put, only the bills scroll */
+.bills-side { position: sticky; top: 58px; z-index: 12; margin: 0 -16px 6px; padding: 10px 16px 8px; background: var(--bg); }
+.bills-side .filter-hint { margin-bottom: 0; }
+
+/* Pages with a fixed strip (calendar days, chore wheel, bill totals) start flush under the top bar, so the strip never shifts when you start scrolling */
+.main:has(.cw-stick, .bills-side, .cal-sticky) { padding-top: 0; }

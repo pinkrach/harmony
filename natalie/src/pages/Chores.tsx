@@ -126,7 +126,6 @@ export default function Chores() {
 
   return (
     <>
-      <PageHead title="Chores" sub={`${left.length} left · ${done.length} done today`} right={<div className="count" aria-label={`${done.length} of ${shown.length} chores done`}><CheckCheck size={20} aria-hidden /><b key={done.length} className="tick">{done.length}</b><span>/{shown.length}</span></div>} />
       <div className="chores-layout">
       <div className="chores-main">
       <ChoreWheelCard />

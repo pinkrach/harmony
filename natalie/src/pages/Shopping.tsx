@@ -129,7 +129,6 @@ export default function Shopping() {
 
   return (
     <>
-      <PageHead title="Groceries" />
 
       {items.length > 0 && (
         <div className="bag-progress pop">
