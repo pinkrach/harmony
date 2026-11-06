@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { AlertTriangle, CalendarDays, Car, Check, ChevronLeft, ChevronRight, ClipboardList, Clock, Home, KeyRound, Pencil, Plus, ShowerHead, Sofa, Trash2, UtensilsCrossed, Users, Wrench, X, type LucideIcon } from 'lucide-react'
 import { Avatar, Chip, Sheet } from '../components/ui'
+import { TimeField } from '../components/TimeField'
 import { Celebration, Intro, markSeen, resetSeen, wasSeen } from '../components/Moments'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { iso, type Chore } from '../chores'
 import { byId, hourLabel, presence, roommates } from '../data'
 import { useChores } from '../chores'
-import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, saveEvents, timeLabel, type CalEvent, type Note, type Repeat, type Rsvp } from '../events'
+import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, reservedRoom, ROOMS, saveEvents, timeLabel, type CalEvent, type Note, type Repeat, type Rsvp } from '../events'
 
 /* ───────── Time helpers ───────── */
 
@@ -240,6 +241,11 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events
 
 const TIMES = Array.from({ length: SPAN * 2 + 1 }, (_, i) => START + i / 2) // 12:00am … 12:00am
 
+/** Another reservation of the same room that overlaps this time, if any. */
+function roomClash(events: CalEvent[], day: string, room: string, start: number, end: number, ignoreId?: string) {
+  return events.find((e) => e.id !== ignoreId && e.title === `${room} reserved` && occursOn(e, day) && start < e.end && e.start < end)
+}
+
 type EventFields = Omit<CalEvent, 'id' | 'date' | 'color'>
 
 function RepeatFields({ repeat, until, onRepeat, onUntil, options = ['none', 'daily', 'weekdays', 'weekends', 'weekly'] }: { repeat: Repeat; until: string; onRepeat: (r: Repeat) => void; onUntil: (u: string) => void; options?: Repeat[] }) {
@@ -263,13 +269,16 @@ function RepeatFields({ repeat, until, onRepeat, onUntil, options = ['none', 'da
 
 /* ───────── Event details (tap an event) ───────── */
 
-function EventDetails({ ev, dayLabel, notes, chore, onNote, onEdit, onDelete, onRsvp, onProposal, onBath, onChores, onClose }: { ev: CalEvent; dayLabel: string; notes: Note[]; chore?: Chore; onNote: (text: string) => void; onEdit: () => void; onDelete: () => void; onRsvp: (r: Rsvp) => void; onProposal: (a: 'approve' | 'decline' | 'cancel') => void; onBath: () => void; onChores: () => void; onClose: () => void }) {
+function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onEdit, onDelete, onRsvp, onProposal, onBath, onChores, onClose }: { ev: CalEvent; dayLabel: string; notes: Note[]; chore?: Chore; onNote: (text: string) => void; onSwap: (message: string | null) => void; onEdit: () => void; onDelete: () => void; onRsvp: (r: Rsvp) => void; onProposal: (a: 'approve' | 'decline' | 'cancel') => void; onBath: () => void; onChores: () => void; onClose: () => void }) {
   const kind = ev.id.startsWith('chore-') ? 'chore' : ev.id.startsWith('bath-') ? 'bath' : 'event'
   const creator = ev.by ?? ME
   const mine = kind === 'event' && creator === ME
   const invited = kind === 'event' && creator !== ME && ev.who.includes(ME)
   const reply = ev.rsvp?.[ME]
   const [draft, setDraft] = useState('')
+  const [asking, setAsking] = useState(false)
+  const [ask, setAsk] = useState('')
+  const room = reservedRoom(ev)
   const nameOf = (id: string) => (id === ME ? 'You' : byId(id).name)
   const status = (id: string) => (id === creator ? 'Host' : ev.rsvp?.[id] === 'yes' ? 'Going' : ev.rsvp?.[id] === 'no' ? 'Declined' : 'Invited')
   const when = `${dayLabel} · ${timeLabel(ev.start)} – ${timeLabel(ev.end)}${ev.repeat && ev.repeat !== 'none' ? ` · ${repeatLabels[ev.repeat]}` : ''}`
@@ -312,6 +321,29 @@ function EventDetails({ ev, dayLabel, notes, chore, onNote, onEdit, onDelete, on
         </div>
       )}
 
+      {room && creator !== ME && (
+        <div className="ev-swap">
+          {ev.swap?.by === ME ? (
+            <>
+              <b>Switch requested</b>
+              <span>Waiting for {byId(creator).name} to answer.</span>
+              <button type="button" className="btn sm ghost" onClick={() => onSwap(null)}>Cancel request</button>
+            </>
+          ) : asking ? (
+            <form onSubmit={(e) => { e.preventDefault(); const t = ask.trim(); if (t) { onSwap(t); setAsking(false) } }}>
+              <label htmlFor="swap-msg"><b>Message for {byId(creator).name}</b></label>
+              <input id="swap-msg" className="input plain" value={ask} onChange={(e) => setAsk(e.target.value)} maxLength={140} autoFocus />
+              <div className="ev-det-actions">
+                <button type="button" className="btn ghost" onClick={() => setAsking(false)}>Cancel</button>
+                <button type="submit" className="btn" disabled={!ask.trim()}>Send request</button>
+              </div>
+            </form>
+          ) : (
+            <button type="button" className="btn ghost" onClick={() => { setAsk(`Hi! Could I use the ${room.toLowerCase()} at this time? Is it ok to switch?`); setAsking(true) }}>Request switch</button>
+          )}
+        </div>
+      )}
+
       <div className="ev-notes">
         <h4>Notes</h4>
         {notes.length === 0 && <p className="muted ev-notes-empty">No notes yet.</p>}
@@ -342,7 +374,7 @@ function EventDetails({ ev, dayLabel, notes, chore, onNote, onEdit, onDelete, on
   )
 }
 
-function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, onSave, onDelete, onClose }: { dayLabel: string; start: number; existing?: CalEvent; preset?: string; heading?: string; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
+function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, events, day, room, onRoom, onSave, onDelete, onClose }: { dayLabel: string; start: number; existing?: CalEvent; preset?: string; heading?: string; events: CalEvent[]; day: string; room?: string; onRoom?: (r: string) => void; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
   const [title, setTitle] = useState(existing?.title ?? preset ?? '')
   const [start, setStart] = useState(existing?.start ?? initialStart)
   const [end, setEnd] = useState(existing?.end ?? Math.min(initialStart + 1, END))
@@ -350,7 +382,11 @@ function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, 
   const [repeat, setRepeat] = useState<Repeat>(existing?.repeat ?? 'none')
   const [until, setUntil] = useState(existing?.until ?? endOfYear())
   const clean = title.trim()
-  const valid = clean.length > 0 && end > start && who.length > 0
+  const clash = room ? roomClash(events, day, room, start, end, existing?.id) : undefined
+  const freeRooms = clash ? ROOMS.filter((r) => r !== room && !roomClash(events, day, r, start, end, existing?.id)) : []
+  const valid = clean.length > 0 && end > start && who.length > 0 && !clash
+  // Switching rooms renames a default "<room> reserved" title along with it.
+  const pickRoom = (r: string) => { if (room && title === `${room} reserved`) setTitle(`${r} reserved`); onRoom?.(r) }
 
   const toggle = (id: string) => setWho(who.includes(id) ? who.filter((w) => w !== id) : [...who, id])
   // Moving the start keeps the event's length (capped at midnight).
@@ -378,17 +414,28 @@ function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, 
         <div className="ev-times">
           <div className="field">
             <label htmlFor="ev-start">Starts</label>
-            <select id="ev-start" className="input plain" value={start} onChange={(e) => changeStart(Number(e.target.value))}>
-              {TIMES.slice(0, -1).map((t) => <option key={t} value={t}>{timeLabel(t)}</option>)}
-            </select>
+            <TimeField id="ev-start" label="Start time" value={start} onChange={changeStart} />
           </div>
           <div className="field">
             <label htmlFor="ev-end">Ends</label>
-            <select id="ev-end" className="input plain" value={end} onChange={(e) => setEnd(Number(e.target.value))}>
-              {TIMES.filter((t) => t > start).map((t) => <option key={t} value={t}>{timeLabel(t)}</option>)}
-            </select>
+            <TimeField id="ev-end" label="End time" value={end} onChange={(v) => setEnd(v === 0 ? END : v)} />
           </div>
         </div>
+        {end <= start && <p className="time-hint" role="alert">The end needs to be after the start.</p>}
+        {room && (
+          <div className={`room-check${clash ? ' busy' : ''}`} role="status">
+            {clash ? (
+              <>
+                <b>{room} is already reserved</b> from {timeLabel(clash.start)} to {timeLabel(clash.end)}{clash.by && clash.by !== ME ? ` by ${byId(clash.by).name}` : ''}.
+                {freeRooms.length > 0
+                  ? <span className="room-alt">Free at this time: {freeRooms.map((r) => onRoom ? <button type="button" key={r} className="chip purple" onClick={() => pickRoom(r)}>{r}</button> : <b key={r}>{r}</b>)}</span>
+                  : <span className="room-alt">Nothing else is free then. Try another time.</span>}
+              </>
+            ) : (
+              <><Check size={16} aria-hidden /> {room} is free at this time.</>
+            )}
+          </div>
+        )}
         <fieldset className="field ev-who">
           <legend>Who’s in?</legend>
           <div className="ev-who-row">
@@ -590,6 +637,8 @@ export default function Calendar() {
   // First-time moments: a welcome the first time you open the calendar, and a cheer for your first reservation / event.
   const [intro, setIntro] = useState(() => (params.get('reset') === '1' ? (resetSeen(), true) : !wasSeen('calendar-intro')))
   const [cheer, setCheer] = useState<'reservation' | 'event' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const say = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(null), 3200) }
   const firstWin = (kind: 'reservation' | 'event') => { if (!wasSeen(`first-${kind}`)) { markSeen(`first-${kind}`); setCheer(kind) } }
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
@@ -697,7 +746,9 @@ export default function Calendar() {
     saveEvents(next)
     setAdding(null)
     setReserve(null)
+    const firstTime = !wasSeen(`first-${reserve ? 'reservation' : 'event'}`)
     firstWin(reserve ? 'reservation' : 'event')
+    if (reserve && !firstTime) say(`${reserve} reserved. Your roommates were notified.`)
   }
 
   const dayStrip = (
@@ -767,11 +818,11 @@ export default function Calendar() {
           currentRepeat={myBath?.repeat}
           currentUntil={myBath?.until}
           taken={bath.filter((s) => s.who !== ME)}
-          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false); if (!myBath) firstWin('reservation') }}
+          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false); if (!myBath) firstWin('reservation'); say('Bathroom time saved. Your roommates were notified.') }}
           onClose={() => setEditingBath(false)}
         />
       )}
-      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
+      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} events={events} day={day} room={reserve ?? undefined} onRoom={(r) => setReserve(r)} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
       {editingHome && <HomeTimesPopup key={day} dayLabel={dayLabel} initial={homeOf(ME)} onSave={saveHome} onClose={() => setEditingHome(false)} />}
       {viewing && (
         <EventDetails
@@ -780,6 +831,7 @@ export default function Calendar() {
           notes={notes[viewing.id] ?? []}
           chore={viewing.id.startsWith('chore-') ? chores.find((c) => `chore-${c.id}` === viewing.id) : undefined}
           onNote={(t) => addNote(viewing.id, t)}
+          onSwap={(msg) => { const next = { ...viewing, swap: msg ? { by: ME, message: msg } : undefined }; store(events.map((e) => (e.id === viewing.id ? next : e))); setViewing(next); if (msg) say(`Request sent to ${byId(viewing.by ?? ME).name}.`) }}
           onClose={() => setViewing(null)}
           onEdit={() => { setEditing(viewing); setViewing(null) }}
           onDelete={() => { store(events.filter((e) => e.id !== viewing.id)); setViewing(null) }}
@@ -789,6 +841,7 @@ export default function Calendar() {
           onChores={() => navigate('/app/chores')}
         />
       )}
+      {toast && <div className="toast-note" role="status">{toast}</div>}
       {intro && (
         <Intro button="Let’s go" onClose={() => { markSeen('calendar-intro'); setIntro(false); if (params.get('reset')) { const n = new URLSearchParams(params); n.delete('reset'); setParams(n, { replace: true }) } }}>
           Plan your events and reserve a spot in your apartment here!
@@ -803,18 +856,21 @@ export default function Calendar() {
         const { ev, start, end } = pendingMove
         const own = (ev.by ?? ME) === ME
         const title = ev.title.replace(EMOJI_LEAD, '')
+        const rr = reservedRoom(ev)
+        const clash = rr ? roomClash(events, day, rr, start, end, ev.id) : undefined
         return (
           <Sheet open title={own ? 'Change this event?' : 'Send a change request?'} icon={<Clock aria-hidden />} tone="bg-purple" onClose={() => setPendingMove(null)}>
             <p className="ev-confirm"><b>{title}</b><br />{timeLabel(ev.start)} – {timeLabel(ev.end)} → <b>{timeLabel(start)} – {timeLabel(end)}</b></p>
+            {clash && <p className="room-check busy" role="alert"><b>{rr} is already reserved</b> from {timeLabel(clash.start)} to {timeLabel(clash.end)}. Pick another time.</p>}
             {!own && <p className="muted ev-confirm-note">This is {byId(ev.by ?? ME).name}’s event. It won’t change until they approve.</p>}
             <div className="ev-det-actions">
               <button type="button" className="btn ghost" onClick={() => setPendingMove(null)}>Keep as is</button>
-              <button type="button" className="btn" onClick={confirmMove}>{own ? 'Confirm' : 'Send request'}</button>
+              {!clash && <button type="button" className="btn" onClick={confirmMove}>{own ? 'Confirm' : 'Send request'}</button>}
             </div>
           </Sheet>
         )
       })()}
-      {editing && !editing.id.startsWith('chore-') && <EventPopup key={editing.id} dayLabel={dayLabel} start={editing.start} existing={editing} onSave={updateEvent} onDelete={deleteEvent} onClose={() => setEditing(null)} />}
+      {editing && !editing.id.startsWith('chore-') && <EventPopup key={editing.id} dayLabel={dayLabel} start={editing.start} existing={editing} events={events} day={day} room={reservedRoom(editing)} onSave={updateEvent} onDelete={deleteEvent} onClose={() => setEditing(null)} />}
 
     </>
   )

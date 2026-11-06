@@ -8,7 +8,7 @@ export type Note = { who: string; text: string }
 /** Someone else asked to move/resize this event; nothing changes until its owner approves. */
 export type Proposal = { by: string; start: number; end: number }
 /** `by` = who created it (missing on older saved events = you). `rsvp` = invited roommates' replies. */
-export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string; repeat?: Repeat; until?: string; by?: string; rsvp?: Record<string, Rsvp>; proposal?: Proposal }
+export type CalEvent = { id: string; date: string; start: number; end: number; title: string; who: string[]; color: string; repeat?: Repeat; until?: string; by?: string; rsvp?: Record<string, Rsvp>; proposal?: Proposal; swap?: { by: string; message: string } }
 
 /** Does something that starts on `date` and repeats (until `until`, inclusive) happen on `key`? */
 export function occursOn(e: { date: string; repeat?: Repeat; until?: string }, key: string) {
@@ -21,6 +21,10 @@ export function occursOn(e: { date: string; repeat?: Repeat; until?: string }, k
   if (e.repeat === 'weekends') return dow === 0 || dow === 6
   return dow === new Date(`${e.date}T00:00`).getDay()
 }
+
+/** Shared spaces that can be reserved as calendar events titled "<space> reserved". */
+export const ROOMS = ['Kitchen', 'Living room']
+export const reservedRoom = (e: { title: string }) => ROOMS.find((r) => e.title === `${r} reserved`)
 
 export const endOfYear = (d = new Date()) => `${d.getFullYear()}-12-31`
 
@@ -55,6 +59,8 @@ function sampleEvents(): CalEvent[] {
     { id: 's2', date: dateKey(today), start: 21, end: 23, title: 'Movie night in the living room', who: ['you', 'diego', 'mara', 'sofi'], color: 'var(--purple)', by: 'diego', rsvp: { mara: 'yes' } },
     { id: 's3', date: dateKey(addDays(today, 2)), start: 11, end: 12, title: 'Landlord visit · fix the sink', who: ['you'], color: 'var(--yellow-d)', by: 'you' },
     { id: 's4', date: dateKey(addDays(today, 1)), start: 17, end: 18, title: 'Sofi & Mara · study session', who: ['sofi', 'mara'], color: 'var(--blue-d)', by: 'sofi' },
+    { id: 's5', date: dateKey(addDays(today, 1)), start: 10, end: 12, title: 'Kitchen reserved', who: ['sofi'], color: 'var(--blue-d)', by: 'sofi' },
+    { id: 's6', date: dateKey(addDays(today, 1)), start: 18, end: 20, title: 'Living room reserved', who: ['you'], color: 'var(--blue-d)', by: 'you', swap: { by: 'mara', message: 'Hi! Could I use the living room then? I have friends coming over.' } },
   ]
 }
 

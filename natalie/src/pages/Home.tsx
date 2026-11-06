@@ -1,11 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, Check as Tick, ClipboardList, Clock, Wallet, X } from 'lucide-react'
+import { CalendarDays, Check as Tick, ClipboardList, Clock, KeyRound, Wallet, X } from 'lucide-react'
 import { Rail } from '../components/ui'
 import { byId } from '../data'
 import RoomScene from '../components/RoomScene'
 import { dueLabel, useChores } from '../chores'
-import { dateKey, loadEvents, saveEvents, timeLabel, type CalEvent } from '../events'
+import { dateKey, loadEvents, reservedRoom, saveEvents, timeLabel, type CalEvent } from '../events'
 import { share, usePayments, youOwe } from '../payments'
 import { useHomeHealth } from '../health'
 
@@ -42,6 +42,9 @@ export default function Home() {
   const health = useHomeHealth()
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [now, setNow] = useState(() => new Date())
+  // Reservations your roommates made stay here until you say you've seen them.
+  const [seen, setSeen] = useState<string[]>(() => { try { return JSON.parse(sessionStorage.getItem('harmony.seenReservations') ?? '[]') as string[] } catch { return [] } })
+  const markSeen = (id: string) => { const next = [...seen, id]; setSeen(next); try { sessionStorage.setItem('harmony.seenReservations', JSON.stringify(next)) } catch { /* storage unavailable */ } }
   const [taps, setTaps] = useState(0)
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000)
@@ -75,6 +78,24 @@ export default function Home() {
         key: `inv-${e.id}`, icon: <CalendarDays size={20} />, mins: 9999,
         title: `${byId(by).name} invited you to ${e.title}`, sub: `${e.date === today ? 'Today' : e.date} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
         actions: <>{btn('Decline', <X size={16} aria-hidden />, () => patch(e.id, { rsvp: { ...e.rsvp, [ME]: 'no' } }), true)}{btn('Accept', <Tick size={16} aria-hidden />, () => patch(e.id, { rsvp: { ...e.rsvp, [ME]: 'yes' } }))}</>,
+      })
+    }
+    // A roommate reserved the kitchen or living room.
+    const room = reservedRoom(e)
+    if (room && by !== ME && e.date >= today && !seen.includes(e.id)) {
+      items.push({
+        key: `res-${e.id}`, icon: <KeyRound size={20} />, mins: 9998,
+        title: `${byId(by).name} reserved the ${room.toLowerCase()}`, sub: `${e.date === today ? 'Today' : new Date(`${e.date}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
+        actions: btn('Got it', <Tick size={16} aria-hidden />, () => markSeen(e.id)),
+      })
+    }
+    // A roommate asked to take over one of your reservations.
+    if (room && by === ME && e.swap && e.swap.by !== ME) {
+      const sw = e.swap
+      items.push({
+        key: `swap-${e.id}`, icon: <KeyRound size={20} />, mins: 9997,
+        title: `${byId(sw.by).name} asked to switch the ${room.toLowerCase()}`, sub: `“${sw.message}”`,
+        actions: <>{btn('Decline', <X size={16} aria-hidden />, () => patch(e.id, { swap: undefined }), true)}{btn('Accept', <Tick size={16} aria-hidden />, () => patch(e.id, { by: sw.by, who: [sw.by], swap: undefined }))}</>,
       })
     }
     // Someone asked to move one of your events.

@@ -1503,3 +1503,28 @@ html { background: color-mix(in srgb, var(--bg) 82%, #6b5fa8); }
 .bill.owe { background: color-mix(in srgb, var(--yellow) 14%, var(--card)); border-color: color-mix(in srgb, var(--yellow-d) 45%, var(--line)); }
 .bill.owed { background: color-mix(in srgb, var(--brand) 7%, var(--card)); border-color: color-mix(in srgb, var(--brand) 22%, var(--line)); }
 .bill.late { background: color-mix(in srgb, var(--coral) 9%, var(--card)); border-color: color-mix(in srgb, var(--coral) 35%, var(--line)); }
+
+/* Navigation labels: darker for contrast (same neutral, no new color) */
+.nav-item:not(.active) { color: color-mix(in srgb, var(--ink) 84%, var(--bg)); }
+
+/* Time picker (type it or spin it) */
+.timefield { position: relative; }
+.time-input { text-align: center; font-family: var(--font-head); font-size: 18px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.wheel-panel { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; margin-top: 8px; padding: 0 4px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); height: calc(38px * 5); overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); }
+.wheel-band { position: absolute; left: 6px; right: 6px; top: 76px; height: 38px; border-radius: 12px; background: color-mix(in srgb, var(--brand) 12%, var(--bg)); pointer-events: none; }
+.wheel { position: relative; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; padding: 76px 0; scrollbar-width: none; overscroll-behavior: contain; touch-action: pan-y; }
+.wheel::-webkit-scrollbar { display: none; }
+.wheel button { display: block; width: 100%; height: 38px; scroll-snap-align: center; border: 0; background: none; font-family: var(--font-head); font-size: 20px; font-weight: 500; color: var(--muted); text-align: center; cursor: pointer; }
+.wheel button.on { color: var(--ink); font-weight: 600; }
+.time-hint { margin: -6px 0 0; font-size: 13px; font-weight: 700; color: var(--coral-d); }
+.room-check { display: block; line-height: 1.45; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--brand) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line)); font-size: 14px; font-weight: 700; }
+.room-check.busy { background: color-mix(in srgb, var(--yellow) 18%, var(--card)); border-color: var(--yellow-d); color: #6b4d00; }
+.room-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+
+.toast-note { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 250; max-width: min(92vw, 380px); padding: 12px 18px; border-radius: 16px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 14px; text-align: center; box-shadow: 0 10px 28px rgba(21, 17, 43, 0.3); animation: rise 0.35s var(--ease-pop) both; }
+
+.ev-swap { display: flex; flex-direction: column; gap: 8px; }
+.ev-swap > span { font-size: 14px; font-weight: 700; color: var(--muted); }
+.ev-swap form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--brand) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line)); }
+.ev-swap > .btn { align-self: stretch; justify-content: center; }
+.hm-txt small { white-space: normal; }
