@@ -64,7 +64,7 @@ function Wheel({ items, index, label, onPick }: { items: string[]; index: number
   )
 }
 
-export function TimeField({ id, value, onChange, label }: { id: string; value: number; onChange: (v: number) => void; label: string }) {
+export function TimeField({ id, value, onChange, label, floating = false }: { id: string; value: number; onChange: (v: number) => void; label: string; floating?: boolean }) {
   const box = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [text, setText] = useState(clockText(value))
@@ -86,7 +86,7 @@ export function TimeField({ id, value, onChange, label }: { id: string; value: n
     else { onChange(v); setText(clockText(v)) }
   }
   return (
-    <div className="timefield" ref={box}>
+    <div className={`timefield${floating ? ' floating' : ''}`} ref={box}>
       <input
         id={id}
         className="input plain time-input"

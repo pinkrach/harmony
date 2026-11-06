@@ -1528,3 +1528,14 @@ html { background: color-mix(in srgb, var(--bg) 82%, #6b5fa8); }
 .ev-swap form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--brand) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line)); }
 .ev-swap > .btn { align-self: stretch; justify-content: center; }
 .hm-txt small { white-space: normal; }
+
+.timefield.floating .wheel-panel { position: absolute; z-index: 20; top: 100%; left: 50%; transform: translateX(-50%); width: min(240px, 78vw); box-shadow: 0 12px 32px rgba(21, 17, 43, 0.22); }
+.home-range .time-input { font-size: 16px; padding-left: 6px; padding-right: 6px; }
+.when-time { display: flex; align-items: center; gap: 10px; }
+.when-time .timefield { flex: 1; min-width: 0; }
+.modal { max-height: 92dvh; overflow-y: auto; }
+
+/* Overdue bills keep their group color (yellow = you owe, lavender = owed to you); lateness shows in the red due date and a thin red edge */
+.bill.owe.late { background: color-mix(in srgb, var(--yellow) 14%, var(--card)); border-color: color-mix(in srgb, var(--yellow-d) 45%, var(--line)); }
+.bill.owed.late { background: color-mix(in srgb, var(--brand) 7%, var(--card)); border-color: color-mix(in srgb, var(--brand) 22%, var(--line)); }
+.bill.owe.late, .bill.owed.late { border-left: 6px solid var(--coral); }

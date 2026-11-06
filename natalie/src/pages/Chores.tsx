@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { BellRing, CalendarDays, Check as CheckIcon, CheckCheck, ChevronDown, ClipboardPlus, Clock, CookingPot, Plus, Sofa, ShowerHead, Home as HomeIcon, type LucideIcon } from 'lucide-react'
 import { Avatar, Check, Chip, PageHead, Segmented, Sheet } from '../components/ui'
 import { Celebration, markSeen, wasSeen } from '../components/Moments'
+import { TimeField } from '../components/TimeField'
 import { byId, roommates } from '../data'
 import { addDays, dayText, dueLabel, isLate, iso, nextSaturday, rooms, timeText, useChores, type Chore, type Room } from '../chores'
 
@@ -11,6 +12,8 @@ const emojis = ['🗑️', '🍽️', '🛁', '🧹', '🪴', '🧺', '🧽', '�
 const whens = ['Today', 'Tomorrow', 'Weekend', 'Pick date'] as const
 type When = (typeof whens)[number]
 
+const toHours = (t: string) => { const [h, m] = t.split(':').map(Number); return h + (m || 0) / 60 }
+const toClock = (v: number) => { const total = Math.min(23 * 60 + 59, Math.round(v * 60)); return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` }
 const dateFor = (w: When, picked: string) => (w === 'Today' ? new Date() : w === 'Tomorrow' ? addDays(1) : w === 'Weekend' ? nextSaturday() : new Date(`${picked}T00:00`))
 
 function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (c: Omit<Chore, 'id' | 'done'>) => void }) {
@@ -66,10 +69,15 @@ function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void
                 <input className="input plain" type="date" value={picked} min={iso(new Date())} onChange={(e) => setPicked(e.target.value)} />
               </label>
             )}
-            <label className="when-field"><Clock size={18} aria-hidden /><span className="sr-only">Time (optional)</span>
-              <input className="input plain" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-              {time && <button type="button" className="link" onClick={() => setTime('')}>Clear</button>}
-            </label>
+            {time ? (
+              <div className="when-time">
+                <Clock size={18} aria-hidden />
+                <TimeField id="chore-time" label="Time" value={toHours(time)} onChange={(v) => setTime(toClock(v))} />
+                <button type="button" className="link" onClick={() => setTime('')}>Clear</button>
+              </div>
+            ) : (
+              <button type="button" className="pick" onClick={() => setTime('09:00')}><Clock size={18} aria-hidden />Add a time</button>
+            )}
           </div>
           <p className="when-summary"><b>Due:</b> {picked || when === 'Pick date' ? summary : 'Choose a date'}{!time && <span className="muted"> · add a time if it matters</span>}</p>
         </div>

@@ -291,7 +291,7 @@ function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onEdit, onDe
         <div className="ev-det-row"><Clock size={20} aria-hidden /><span>{when}</span></div>
         {kind === 'event' && <div className="ev-det-row"><Pencil size={20} aria-hidden /><span>{mine ? 'Created by you' : `Created by ${byId(creator).name}`}</span></div>}
         {kind === 'bath' && <>
-          <div className="ev-det-row"><ShowerHead size={20} aria-hidden /><span>Main bathroom · 30-minute slot</span></div>
+          <div className="ev-det-row"><ShowerHead size={20} aria-hidden /><span>Main bathroom</span></div>
           <div className="ev-det-person"><Avatar id={ev.who[0]} size={34} /><span className="grow"><b>{nameOf(ev.who[0])}</b></span><small className="ev-det-status host">Slot owner</small></div>
         </>}
         {kind === 'chore' && chore && <>
@@ -517,13 +517,9 @@ function HomeTimesPopup({ dayLabel, initial, onSave, onClose }: { dayLabel: stri
           <div className="stack" style={{ gap: 10 }}>
             {ranges.map(([a, b], i) => (
               <div className="home-range" key={i}>
-                <select aria-label={`Home from, time ${i + 1}`} className="input plain" value={a} onChange={(e) => set(i, 0, Number(e.target.value))}>
-                  {TIMES.slice(0, -1).map((t) => <option key={t} value={t}>{timeLabel(t)}</option>)}
-                </select>
+                <TimeField floating id={`home-from-${i}`} label={`Home from, time ${i + 1}`} value={a} onChange={(v) => set(i, 0, v)} />
                 <span className="muted" style={{ fontWeight: 800 }}>to</span>
-                <select aria-label={`Home until, time ${i + 1}`} className="input plain" value={b} onChange={(e) => set(i, 1, Number(e.target.value))}>
-                  {TIMES.filter((t) => t > a).map((t) => <option key={t} value={t}>{timeLabel(t)}</option>)}
-                </select>
+                <TimeField floating id={`home-to-${i}`} label={`Home until, time ${i + 1}`} value={b} onChange={(v) => set(i, 1, v === 0 ? END : v)} />
                 <button type="button" className="icon-btn home-remove" aria-label={`Remove time ${i + 1}`} onClick={() => setRanges(ranges.filter((_, j) => j !== i))}>
                   <Trash2 size={18} aria-hidden />
                 </button>
@@ -564,7 +560,7 @@ function loadNotes(): Record<string, Note[]> {
 }
 const HOME_KEY = 'harmony.myHome'
 const BATH_KEY = 'harmony.bathroom'
-type BathSlot = { who: string; start: number; repeat?: Repeat; until?: string } // 30-minute slots, every day unless set
+type BathSlot = { who: string; start: number; end?: number; repeat?: Repeat; until?: string } // 30 minutes unless an end time is set, every day unless set
 
 const sampleBath: BathSlot[] = [
   { who: 'sofi', start: 7 }, { who: 'diego', start: 7.5 }, { who: 'you', start: 8 }, { who: 'mara', start: 21.5 },
@@ -578,14 +574,17 @@ function loadBath(): BathSlot[] {
   return sampleBath
 }
 
-const BATH_TIMES = Array.from({ length: SPAN * 2 }, (_, i) => START + i / 2) // 12:00am … 11:30pm
-
-function BathTimePopup({ current, currentRepeat, currentUntil, taken, onSave, onClose }: { current: number | null; currentRepeat?: Repeat; currentUntil?: string; taken: BathSlot[]; onSave: (start: number, repeat: Repeat, until?: string) => void; onClose: () => void }) {
-  const firstFree = BATH_TIMES.find((t) => !taken.some((s) => s.start === t)) ?? START
+function BathTimePopup({ current, currentEnd, currentRepeat, currentUntil, taken, onSave, onClose }: { current: number | null; currentEnd?: number; currentRepeat?: Repeat; currentUntil?: string; taken: BathSlot[]; onSave: (start: number, end: number, repeat: Repeat, until?: string) => void; onClose: () => void }) {
+  const endOf = (s: BathSlot) => s.end ?? s.start + 0.5
+  const clashing = (a: number, b: number) => taken.find((s) => a < endOf(s) && s.start < b)
+  const firstFree = Array.from({ length: SPAN * 2 }, (_, i) => START + i / 2).find((t) => !clashing(t, t + 0.5)) ?? START
   const [start, setStart] = useState(current ?? firstFree)
-  const takenBy = (t: number) => taken.find((s) => s.start === t)
+  const [end, setEnd] = useState(current !== null ? currentEnd ?? current + 0.5 : firstFree + 0.5)
   const [repeat, setRepeat] = useState<Repeat>(currentRepeat ?? 'daily')
   const [until, setUntil] = useState(currentUntil ?? endOfYear())
+  const clash = clashing(start, end)
+  const valid = end > start && !clash
+  const changeStart = (v: number) => { setEnd(Math.min(v + (end - start), END)); setStart(v) }
 
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
@@ -596,25 +595,32 @@ function BathTimePopup({ current, currentRepeat, currentUntil, taken, onSave, on
         aria-labelledby="bath-title"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
-        onSubmit={(e) => { e.preventDefault(); if (!takenBy(start)) onSave(start, repeat, until) }}
+        onSubmit={(e) => { e.preventDefault(); if (valid) onSave(start, end, repeat, until) }}
       >
         <div>
           <h2 id="bath-title">{current === null ? 'Pick your bathroom time' : 'Change your bathroom time'}</h2>
-          <div className="muted" style={{ fontWeight: 700, fontSize: 14 }}>Slots are 30 minutes. Times other roommates have are greyed out.</div>
+          <div className="muted" style={{ fontWeight: 700, fontSize: 14 }}>Choose when you will use it. Times your roommates have can’t be picked.</div>
         </div>
-        <div className="field">
-          <label htmlFor="bath-start">Start time</label>
-          <select id="bath-start" className="input plain" value={start} onChange={(e) => setStart(Number(e.target.value))} autoFocus>
-            {BATH_TIMES.map((t) => {
-              const who = takenBy(t)
-              return <option key={t} value={t} disabled={!!who}>{timeLabel(t)} – {timeLabel(t + 0.5)}{who ? ` · ${byId(who.who).name}` : ''}</option>
-            })}
-          </select>
+        <div className="ev-times">
+          <div className="field">
+            <label htmlFor="bath-start">Starts</label>
+            <TimeField id="bath-start" label="Start time" value={start} onChange={changeStart} />
+          </div>
+          <div className="field">
+            <label htmlFor="bath-end">Ends</label>
+            <TimeField id="bath-end" label="End time" value={end} onChange={(v) => setEnd(v === 0 ? END : v)} />
+          </div>
+        </div>
+        {end <= start && <p className="time-hint" role="alert">The end needs to be after the start.</p>}
+        <div className={`room-check${clash ? ' busy' : ''}`} role="status">
+          {clash
+            ? <><b>The bathroom is already taken</b> from {timeLabel(clash.start)} to {timeLabel(endOf(clash))} by {byId(clash.who).name}. Pick another time.</>
+            : <><Check size={16} aria-hidden /> The bathroom is free at this time.</>}
         </div>
         <RepeatFields repeat={repeat} until={until} onRepeat={setRepeat} onUntil={setUntil} options={['daily', 'weekdays', 'weekends']} />
         <div className="modal-actions">
           <button type="button" className="btn sm ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn sm">Save time</button>
+          <button type="submit" className="btn sm" disabled={!valid}>Save time</button>
         </div>
       </form>
     </div>,
@@ -680,7 +686,7 @@ export default function Calendar() {
 
   const dayEvents = events.filter((e) => occursOn(e, day)).sort((a, b) => a.start - b.start)
   // Bathroom slots live in the calendar too: one 30-minute card per roommate, every day.
-  const bathEvents: CalEvent[] = bath.filter((s) => occursOn({ date: '2000-01-01', repeat: s.repeat ?? 'daily', until: s.until }, day)).map((s) => ({ id: `bath-${s.who}`, date: day, start: s.start, end: s.start + 0.5, title: 'Bathroom', who: [s.who], color: 'var(--blue-d)' }))
+  const bathEvents: CalEvent[] = bath.filter((s) => occursOn({ date: '2000-01-01', repeat: s.repeat ?? 'daily', until: s.until }, day)).map((s) => ({ id: `bath-${s.who}`, date: day, start: s.start, end: s.end ?? s.start + 0.5, title: 'Bathroom', who: [s.who], color: 'var(--blue-d)' }))
   const shown = [...dayEvents, ...choresToEvents(chores, day), ...bathEvents].sort((a, b) => a.start - b.start)
   const openEvent = (ev: CalEvent) => setViewing(ev)
   const addNote = (id: string, text: string) => {
@@ -803,7 +809,7 @@ export default function Calendar() {
       </Sheet>
       <Sheet open={reserving} title="What do you want to reserve?" icon={<KeyRound aria-hidden />} tone="bg-purple" onClose={() => setReserving(false)}>
         <div className="add-menu">
-          {[{ n: 'Bathroom', icon: ShowerHead, hint: myBath ? `Your slot: ${timeLabel(myBath.start)}` : '30-minute slot' }, { n: 'Kitchen', icon: UtensilsCrossed, hint: 'Cooking or hosting' }, { n: 'Living room', icon: Sofa, hint: 'Friends over, study session' }].map(({ n, icon: Icon, hint }) => (
+          {[{ n: 'Bathroom', icon: ShowerHead, hint: myBath ? `Your time: ${timeLabel(myBath.start)} – ${timeLabel(myBath.end ?? myBath.start + 0.5)}` : 'Pick a start and end time' }, { n: 'Kitchen', icon: UtensilsCrossed, hint: 'Cooking or hosting' }, { n: 'Living room', icon: Sofa, hint: 'Friends over, study session' }].map(({ n, icon: Icon, hint }) => (
             <button key={n} type="button" className="add-opt" onClick={() => { setReserving(false); if (n === 'Bathroom') setEditingBath(true); else { setReserve(n); setAdding(startAt()) } }}>
               <span className="add-ico" aria-hidden><Icon size={22} /></span>
               <span className="grow"><b>{n}</b><small>{hint}</small></span>
@@ -815,10 +821,11 @@ export default function Calendar() {
       {editingBath && (
         <BathTimePopup
           current={myBath?.start ?? null}
+          currentEnd={myBath?.end}
           currentRepeat={myBath?.repeat}
           currentUntil={myBath?.until}
           taken={bath.filter((s) => s.who !== ME)}
-          onSave={(start, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, repeat, until }]); setEditingBath(false); if (!myBath) firstWin('reservation'); say('Bathroom time saved. Your roommates were notified.') }}
+          onSave={(start, end, repeat, until) => { saveBath([...bath.filter((s) => s.who !== ME), { who: ME, start, end, repeat, until }]); setEditingBath(false); if (!myBath) firstWin('reservation'); say('Bathroom time saved. Your roommates were notified.') }}
           onClose={() => setEditingBath(false)}
         />
       )}
