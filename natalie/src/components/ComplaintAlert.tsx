@@ -17,19 +17,28 @@ function MoodPip({ kind, size }: { kind: 'caring' | 'stern'; size: number }) {
 
 /** Dark screen: Pip walks in and tells you what your roommates are complaining about. Swipe through them; tap one to say if it is done. */
 export function ComplaintAlert() {
-  const { pending, resolve, alertOpen, openAlert, closeAlert, hasUnseen } = useComplaints()
+  const { pending, resolve, alertOpen, closeAlert, banner, dismissBanner, openAlert } = useComplaints()
   const [i, setI] = useState(0)
   const [asking, setAsking] = useState<string | null>(null)
   const track = useRef<HTMLDivElement>(null)
 
-  // Opens by itself the first time there is something you have not seen.
-  useEffect(() => { if (hasUnseen && !alertOpen) openAlert() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // Everything answered: close.
   useEffect(() => { if (alertOpen && pending.length === 0) closeAlert() }, [pending.length, alertOpen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (i > pending.length - 1) setI(Math.max(0, pending.length - 1)) }, [pending.length, i])
   useEffect(() => { if (alertOpen) { setI(0); setAsking(null) } }, [alertOpen])
 
-  if (!alertOpen || pending.length === 0) return null
+  const redBanner = banner && !alertOpen ? createPortal(
+    <div className="ca-banner" role="alert">
+      <button type="button" className="ca-banner-main" onClick={() => { dismissBanner(); openAlert() }}>
+        <span className="ca-banner-ico" aria-hidden><Megaphone size={20} /></span>
+        <span className="ca-banner-txt"><b>New anonymous complaint</b><small>{banner.text}</small></span>
+        <span className="ca-banner-see">See</span>
+      </button>
+      <button type="button" className="ca-banner-x" onClick={dismissBanner} aria-label="Dismiss"><X size={18} aria-hidden /></button>
+    </div>,
+    document.body,
+  ) : null
+  if (!alertOpen || pending.length === 0) return redBanner
   const goTo = (n: number) => {
     const el = track.current
     if (!el) return

@@ -32,7 +32,7 @@ const PRAISE = [
 
 const dayLabel = (date: string) => (date === dateKey(new Date()) ? 'Today' : new Date(`${date}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }))
 
-type Item = { key: string; to?: string; icon: ReactNode; title: string; sub: string; left?: string; mins: number; actions: ReactNode }
+type Item = { key: string; to?: string; red?: boolean; icon: ReactNode; title: string; sub: string; left?: string; mins: number; actions: ReactNode }
 
 /** "45 min left" / "2 h left" when something is due within a few hours. */
 function leftText(mins: number) {
@@ -87,7 +87,7 @@ export default function Home() {
   const items: Item[] = []
   if (complaints.length > 0) {
     items.push({
-      key: 'complaints', icon: <Megaphone size={20} />, mins: 10000,
+      key: 'complaints', red: true, icon: <Megaphone size={20} />, mins: -1,
       title: complaints.length === 1 ? 'Anonymous chore complaint' : `${complaints.length} anonymous chore complaints`,
       sub: complaints[0].text, actions: <button type="button" className="hm-btn" onClick={openAlert}>See</button>,
     })
@@ -187,7 +187,7 @@ export default function Home() {
         <div className="hm-scroll">
           {items.length === 0 && <p className="hm-empty">You’re all caught up 🎉</p>}
           {items.map((it) => (
-            <div className="hm-note" key={it.key}>
+            <div className={`hm-note${it.red ? ' red' : ''}`} key={it.key}>
               {(() => {
                 const body = (<><span className="hm-ico" aria-hidden>{it.icon}</span>
                   <div className="hm-txt">

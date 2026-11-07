@@ -1,18 +1,16 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
 /* Chore complaints. Anyone can file one; the others see it on a dark screen when they open the app,
    and it only goes away once someone says it has been taken care of. Complaints are anonymous: `by` is kept only so we know which one is yours, and it is never shown. Prototype data lives in sessionStorage. */
 
 export type Complaint = { id: string; by: string; text: string; at: number; resolved?: boolean }
 
-const KEY = 'harmony.complaints'
+const KEY = 'harmony.complaints2'
 const SEEN_KEY = 'harmony.complaintsSeen'
 const DAY = 24 * 3600 * 1000
 
-const seed = (): Complaint[] => [
-  { id: 'cp1', by: 'sofi', text: 'The dishes in the sink have been there for two days.', at: Date.now() - 2 * DAY },
-  { id: 'cp2', by: 'mara', text: 'The bathroom light was left on all night.', at: Date.now() - DAY / 2 },
-]
+// Demo: the house starts with no complaints; one appears when somebody files it.
+const seed = (): Complaint[] => []
 
 function load(): Complaint[] {
   try {
@@ -46,6 +44,9 @@ type Store = {
   closeAlert: () => void
   /** True when there are complaints you have not been shown yet this session. */
   hasUnseen: boolean
+  /** The complaint that was just filed, shown as a red banner for a few seconds. */
+  banner: Complaint | null
+  dismissBanner: () => void
 }
 const Ctx = createContext<Store | null>(null)
 
@@ -55,10 +56,18 @@ export function ComplaintsProvider({ children }: { children: ReactNode }) {
   const pending = useMemo(() => complaints.filter((c) => !c.resolved), [complaints])
   const hasUnseen = pending.some((c) => !seen.includes(c.id))
   const [alertOpen, setAlertOpen] = useState(false)
+  const [banner, setBanner] = useState<Complaint | null>(null)
+  const timer = useRef<number>(0)
+  const dismissBanner = () => { window.clearTimeout(timer.current); setBanner(null) }
   const commit = (next: Complaint[]) => { setComplaints(next); save(next) }
   const file: Store['file'] = (text) => {
     const id = `cp${Date.now()}`
-    commit([{ id, by: 'you', text, at: Date.now() }, ...complaints])
+    const c: Complaint = { id, by: 'you', text, at: Date.now() }
+    commit([c, ...complaints])
+    // Everyone gets a red heads-up (in this demo, you see it too).
+    window.clearTimeout(timer.current)
+    setBanner(c)
+    timer.current = window.setTimeout(() => setBanner(null), 7000)
     // You just wrote it, so don't pop it up in your own face.
     const next = [...seen, id]
     setSeen(next)
@@ -71,7 +80,7 @@ export function ComplaintsProvider({ children }: { children: ReactNode }) {
     setSeen(next)
     try { sessionStorage.setItem(SEEN_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
   }
-  return <Ctx.Provider value={{ complaints, pending, file, resolve, alertOpen, openAlert: () => setAlertOpen(true), closeAlert, hasUnseen }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ complaints, pending, file, resolve, alertOpen, openAlert: () => setAlertOpen(true), closeAlert, hasUnseen, banner, dismissBanner }}>{children}</Ctx.Provider>
 }
 
 export function useComplaints() {
