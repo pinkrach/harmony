@@ -123,16 +123,63 @@ function iconFor(ev: CalEvent): LucideIcon {
   return CalendarDays
 }
 
-function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events: CalEvent[]; isToday: boolean; nowH: number; onPick: (h: number) => void; onEdit: (e: CalEvent) => void; onMove: (e: CalEvent, start: number, end: number) => void }) {
+function DayTimeline({ events, isToday, nowH, pending, onPick, onEdit, onMove }: { events: CalEvent[]; isToday: boolean; nowH: number; pending?: { start: number; end: number } | null; onPick: (h: number, end?: number) => void; onEdit: (e: CalEvent) => void; onMove: (e: CalEvent, start: number, end: number) => void }) {
   const box = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<{ id: string; start: number; end: number } | null>(null)
   const dragged = useRef(false)
+  const lane = useRef<HTMLDivElement>(null)
+  const [ghost, setGhost] = useState<{ start: number; end: number } | null>(null)
+
+  // Press on an empty spot and drag up or down to draw a new block; letting go opens the "what is it?" choices.
+  // Mouse: drag right away. Touch: press and hold a moment first, so scrolling still works.
+  const beginCreate = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest('.vtl-ev')) return
+    const el = lane.current
+    if (!el) return
+    const y0 = e.clientY
+    const touch = e.pointerType !== 'mouse'
+    const at = (y: number) => Math.min(END - 0.5, Math.max(START, Math.floor((START + (y - el.getBoundingClientRect().top) / HOUR_PX) * 2) / 2))
+    const anchor = at(y0)
+    let active = false
+    let cur = { start: anchor, end: anchor + 0.5 }
+    const calc = (y: number) => { const h = at(y); return h >= anchor ? { start: anchor, end: h + 0.5 } : { start: h, end: anchor + 0.5 } }
+    const activate = () => { active = true; dragged.current = true; navigator.vibrate?.(8); setGhost(cur) }
+    const timer = touch ? window.setTimeout(activate, 350) : undefined
+    const stopScroll = (t: TouchEvent) => { if (active) t.preventDefault() }
+    const move = (m: PointerEvent) => {
+      if (!active) {
+        if (Math.abs(m.clientY - y0) > 6) { if (!touch) activate(); else cleanup() } // finger moved first: that's a scroll
+        if (!active) return
+      }
+      cur = calc(m.clientY)
+      setGhost(cur)
+    }
+    const up = () => {
+      const made = active
+      const { start, end } = cur
+      cleanup()
+      if (made) onPick(start, end)
+    }
+    const cleanup = () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      document.removeEventListener('pointercancel', cleanup)
+      document.removeEventListener('touchmove', stopScroll)
+      setGhost(null)
+      window.setTimeout(() => { dragged.current = false }, 50)
+    }
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+    document.addEventListener('pointercancel', cleanup)
+    document.addEventListener('touchmove', stopScroll, { passive: false })
+  }
 
   // Drag an event to move it, or drag its bottom grip to stretch/shrink it. Snaps to 30 minutes.
   // Mouse: drag right away. Touch: press and hold a moment first, so scrolling still works.
-  const beginDrag = (e: React.PointerEvent, ev: CalEvent, mode: 'move' | 'resize') => {
+  const beginDrag = (e: React.PointerEvent, ev: CalEvent, mode: 'move' | 'resize' | 'start') => {
     if (e.button !== 0) return
-    if (mode === 'resize') e.stopPropagation()
+    if (mode !== 'move') e.stopPropagation()
     const y0 = e.clientY
     const touch = e.pointerType !== 'mouse'
     const len = ev.end - ev.start
@@ -141,11 +188,12 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events
     const calc = (y: number) => {
       const dh = Math.round(((y - y0) / HOUR_PX) * 2) / 2
       if (mode === 'move') { const s = Math.min(END - len, Math.max(START, ev.start + dh)); return { start: s, end: s + len } }
+      if (mode === 'start') return { start: Math.min(ev.end - 0.5, Math.max(START, ev.start + dh)), end: ev.end }
       return { start: ev.start, end: Math.min(END, Math.max(ev.start + 0.5, ev.end + dh)) }
     }
     const activate = () => { active = true; dragged.current = true; navigator.vibrate?.(8); setDrag({ id: ev.id, ...cur }) }
     const timer = touch && mode === 'move' ? window.setTimeout(activate, 320) : undefined
-    if (mode === 'resize') activate()
+    if (mode !== 'move') activate()
     const stopScroll = (t: TouchEvent) => { if (active) t.preventDefault() }
     const move = (m: PointerEvent) => {
       if (!active) {
@@ -191,19 +239,31 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events
         ))}
         <div
           className="vtl-lane"
-          title="Tap to add an event"
+          ref={lane}
+          title="Tap, or press and drag, to add something"
+          onPointerDown={beginCreate}
           onClick={(e) => {
+            if (dragged.current) return
             const r = e.currentTarget.getBoundingClientRect()
             const h = START + (e.clientY - r.top) / HOUR_PX
             onPick(Math.min(END - 0.5, Math.max(START, Math.floor(h * 2) / 2)))
           }}
         >
+          {(ghost ?? pending) && (() => {
+            const g = (ghost ?? pending)!
+            return (
+              <div className={`vtl-ghost${ghost ? '' : ' set'}`} style={{ top: (g.start - START) * HOUR_PX, height: (g.end - g.start) * HOUR_PX - 3 }} aria-hidden>
+                <b>New</b><small>{timeLabel(g.start)} – {timeLabel(g.end)}</small>
+              </div>
+            )
+          })()}
           {showNow && <span className="vtl-now" style={{ top: (nowH - START) * HOUR_PX }} aria-hidden />}
           {laid.map(({ ev, col, cols }) => {
             const chore = ev.id.startsWith('chore-')
             const Icon = iconFor(ev)
             const slot = ev.id.startsWith('bath-') // 30-minute bathroom slots stay slim so neighbours don't overlap
-            const movable = !chore && !slot
+            const movable = !slot && (!chore || ev.who.includes('you'))
+            const stretch = movable && !chore
             const live = drag?.id === ev.id ? drag : null
             const evStart = live?.start ?? ev.start
             const evEnd = live?.end ?? ev.end
@@ -217,7 +277,7 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events
                 type="button"
                 className={`vtl-ev${chore ? ' is-chore' : ''}${cols > 1 ? ' narrow' : ''}${slot ? ' slot' : ''}${live ? ' dragging' : ''}${ev.proposal ? ' has-proposal' : ''}`}
                 style={{ top, height, left: `${(col / cols) * 100}%`, width: `calc(${100 / cols}% - 6px)`, '--c': ev.color } as React.CSSProperties}
-                aria-label={`Details for ${title}, ${timeLabel(ev.start)} to ${timeLabel(ev.end)}${movable ? '. Drag to move, or drag the bottom edge to change its length' : ''}`}
+                aria-label={`Details for ${title}, ${timeLabel(ev.start)} to ${timeLabel(ev.end)}${stretch ? '. Press and drag to move, or drag the top or bottom edge to change its length' : movable ? '. Press and drag to move it' : ''}`}
                 onPointerDown={movable ? (e) => beginDrag(e, ev, 'move') : undefined}
                 onClick={(e) => { e.stopPropagation(); if (dragged.current) return; onEdit(ev) }}
               >
@@ -226,8 +286,10 @@ function DayTimeline({ events, isToday, nowH, onPick, onEdit, onMove }: { events
                   <b>{slot ? `${title} · ${names}` : title}</b>
                   {!slot && <small>{live ? `${timeLabel(evStart)} – ${timeLabel(evEnd)}` : cols > 1 ? timeLabel(ev.start) : `${timeLabel(ev.start)} · ${names}${ev.repeat && ev.repeat !== 'none' ? ' · ↻' : ''}`}</small>}
                   {ev.proposal && !live && <small className="vtl-prop">⏳ Change requested</small>}
+                  {ev.swap && !ev.proposal && !live && <small className="vtl-prop">🔑 Switch requested</small>}
                 </span>
-                {movable && <span className="vtl-grip" aria-hidden onPointerDown={(e) => beginDrag(e, ev, 'resize')} />}
+                {stretch && <span className="vtl-grip top" aria-hidden onPointerDown={(e) => beginDrag(e, ev, 'start')} />}
+                {stretch && <span className="vtl-grip" aria-hidden onPointerDown={(e) => beginDrag(e, ev, 'resize')} />}
               </button>
             )
           })}
@@ -269,7 +331,7 @@ function RepeatFields({ repeat, until, onRepeat, onUntil, options = ['none', 'da
 
 /* ───────── Event details (tap an event) ───────── */
 
-function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onEdit, onDelete, onRsvp, onProposal, onBath, onChores, onClose }: { ev: CalEvent; dayLabel: string; notes: Note[]; chore?: Chore; onNote: (text: string) => void; onSwap: (message: string | null) => void; onEdit: () => void; onDelete: () => void; onRsvp: (r: Rsvp) => void; onProposal: (a: 'approve' | 'decline' | 'cancel') => void; onBath: () => void; onChores: () => void; onClose: () => void }) {
+function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onSwapAnswer, onEdit, onDelete, onRsvp, onProposal, onBath, onChores, onClose }: { ev: CalEvent; dayLabel: string; notes: Note[]; chore?: Chore; onNote: (text: string) => void; onSwap: (message: string | null) => void; onSwapAnswer: (a: 'accept' | 'decline') => void; onEdit: () => void; onDelete: () => void; onRsvp: (r: Rsvp) => void; onProposal: (a: 'approve' | 'decline' | 'cancel') => void; onBath: () => void; onChores: () => void; onClose: () => void }) {
   const kind = ev.id.startsWith('chore-') ? 'chore' : ev.id.startsWith('bath-') ? 'bath' : 'event'
   const creator = ev.by ?? ME
   const mine = kind === 'event' && creator === ME
@@ -318,6 +380,17 @@ function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onEdit, onDe
             </div>
           )}
           {prop.by === ME && <button type="button" className="btn sm ghost" onClick={() => onProposal('cancel')}>Cancel request</button>}
+        </div>
+      )}
+
+      {room && creator === ME && ev.swap && ev.swap.by !== ME && (
+        <div className="ev-prop">
+          <b>{byId(ev.swap.by).name} asked to switch the {room.toLowerCase()}</b>
+          <span>“{ev.swap.message}”</span>
+          <div className="ev-det-actions">
+            <button type="button" className="btn ghost" onClick={() => onSwapAnswer('decline')}><X size={18} aria-hidden /> Decline</button>
+            <button type="button" className="btn" onClick={() => onSwapAnswer('accept')}><Check size={18} aria-hidden /> Accept</button>
+          </div>
         </div>
       )}
 
@@ -374,10 +447,10 @@ function EventDetails({ ev, dayLabel, notes, chore, onNote, onSwap, onEdit, onDe
   )
 }
 
-function EventPopup({ dayLabel, start: initialStart, existing, preset, heading, events, day, room, onRoom, onSave, onDelete, onClose }: { dayLabel: string; start: number; existing?: CalEvent; preset?: string; heading?: string; events: CalEvent[]; day: string; room?: string; onRoom?: (r: string) => void; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
+function EventPopup({ dayLabel, start: initialStart, end: initialEnd, existing, preset, heading, events, day, room, onRoom, onSave, onDelete, onClose }: { dayLabel: string; start: number; end?: number; existing?: CalEvent; preset?: string; heading?: string; events: CalEvent[]; day: string; room?: string; onRoom?: (r: string) => void; onSave: (e: EventFields) => void; onDelete?: () => void; onClose: () => void }) {
   const [title, setTitle] = useState(existing?.title ?? preset ?? '')
   const [start, setStart] = useState(existing?.start ?? initialStart)
-  const [end, setEnd] = useState(existing?.end ?? Math.min(initialStart + 1, END))
+  const [end, setEnd] = useState(existing?.end ?? initialEnd ?? Math.min(initialStart + 1, END))
   const [who, setWho] = useState<string[]>(existing?.who ?? ['you'])
   const [repeat, setRepeat] = useState<Repeat>(existing?.repeat ?? 'none')
   const [until, setUntil] = useState(existing?.until ?? endOfYear())
@@ -544,10 +617,20 @@ function HomeTimesPopup({ dayLabel, initial, onSave, onClose }: { dayLabel: stri
 
 /* ───────── Bathroom slots & parking (unchanged) ───────── */
 
-const ME = 'you' // the logged-in roommate (Natalie) in this prototype
+const ME = 'you' // the logged-in roommate (you) in this prototype
 const NOTES_KEY = 'harmony.notes'
 const sampleNotes: Record<string, Note[]> = {
   s2: [{ who: 'mara', text: 'I’ll bring popcorn 🍿' }, { who: 'diego', text: 'Picking the movie. Vote in the group chat!' }],
+  f1: [{ who: 'diego', text: 'Easy pace, I promise 😅 Meet at the door.' }, { who: 'you', text: 'I’m in! Bringing water.' }],
+  f2: [{ who: 'mara', text: 'Making a big batch of soup. Leave me the stove please 🍲' }],
+  f3: [{ who: 'you', text: 'Waiting on the delivery. Ring me if I’m in the shower.' }, { who: 'sofi', text: 'I’ll be around until noon too.' }],
+  f4: [{ who: 'sofi', text: 'Ordering from the Thai place, tell me what you want!' }, { who: 'diego', text: 'Pad thai for me 🙌' }, { who: 'mara', text: 'Veggie curry please.' }],
+  f6: [{ who: 'mara', text: 'List is in Groceries. I’ll drive.' }, { who: 'you', text: 'Adding oat milk and sponges.' }],
+  f7: [{ who: 'you', text: 'Quick one: bills, the chore wheel and the rent plan.' }, { who: 'diego', text: 'I’ll bring the receipts.' }],
+  'chore-6': [{ who: 'you', text: 'Bins go out before 9, the truck comes early.' }],
+  'chore-7': [{ who: 'sofi', text: 'The big fern needs a little extra 🌿' }],
+  'chore-8': [{ who: 'you', text: 'Using the shared machine, I’ll be done by 3.' }],
+  'chore-9': [{ who: 'diego', text: 'Before the grocery haul arrives!' }],
   'bath-sofi': [{ who: 'sofi', text: 'I take about 20 min. Fan stays on, please don’t turn it off.' }],
   'bath-diego': [{ who: 'diego', text: 'Quick shower, out by 7:45.' }],
 }
@@ -649,10 +732,25 @@ export default function Calendar() {
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
   const [pendingStart, setPendingStart] = useState<number | null>(null) // time tapped on the day, kept while you choose what to add
-  const askWhatToAdd = (h?: number) => { setPendingStart(h ?? null); setMenu(true) }
+  const [pendingEnd, setPendingEnd] = useState<number | null>(null) // set when you drew a block by dragging
+  const askWhatToAdd = (h?: number, end?: number) => { setPendingStart(h ?? null); setPendingEnd(end ?? null); setMenu(true) }
   const startAt = () => pendingStart ?? nextHalfHour()
   const [reserving, setReserving] = useState(false)
   const [reserve, setReserve] = useState<string | null>(null)
+  // The block you drew stays on the day while you choose what it is and fill it in.
+  const drawing = pendingStart !== null && (menu || reserving || adding !== null) ? { start: pendingStart, end: pendingEnd ?? Math.min(END, pendingStart + 1) } : null
+  useEffect(() => {
+    if (!menu) return
+    const t = window.setTimeout(() => {
+      const g = document.querySelector('.vtl-ghost')
+      if (!g) return
+      const r = g.getBoundingClientRect()
+      const stickyBottom = document.querySelector('.cal-sticky')?.getBoundingClientRect().bottom ?? 120
+      // Keep the block just under the day strip, clear of the sheet that rises from the bottom.
+      if (r.bottom > window.innerHeight * 0.45 || r.top < stickyBottom + 4) window.scrollBy({ top: r.top - stickyBottom - 16, behavior: 'smooth' })
+    }, 60)
+    return () => window.clearTimeout(t)
+  }, [menu])
   const [bath, setBath] = useState<BathSlot[]>(loadBath)
   const [editingBath, setEditingBath] = useState(false)
   const saveBath = (next: BathSlot[]) => {
@@ -665,7 +763,7 @@ export default function Calendar() {
   })
   const [editingHome, setEditingHome] = useState(false)
   const idSeq = useRef(0)
-  const { chores } = useChores()
+  const { chores, update: updateChore } = useChores()
 
   // The current week, Monday → Sunday.
   const monday = addDays(now, -((now.getDay() + 6) % 7) + weekOffset * 7)
@@ -698,6 +796,11 @@ export default function Calendar() {
   const confirmMove = () => {
     if (!pendingMove) return
     const { ev, start, end } = pendingMove
+    if (ev.id.startsWith('chore-')) {
+      updateChore(Number(ev.id.slice(6)), { time: `${String(Math.floor(start)).padStart(2, '0')}:${start % 1 ? '30' : '00'}` })
+      setPendingMove(null)
+      return
+    }
     const own = (ev.by ?? ME) === ME
     store(events.map((e) => (e.id === ev.id ? (own ? { ...e, start, end, proposal: undefined } : { ...e, proposal: { by: ME, start, end } }) : e)))
     setPendingMove(null)
@@ -717,6 +820,23 @@ export default function Calendar() {
     const h = Math.ceil(nowH * 2) / 2
     return h >= START && h < END ? h : START
   }
+  // Coming from a notification: jump to the event's day and open it.
+  useEffect(() => {
+    const id = params.get('event')
+    if (!id) return
+    const ev = events.find((e) => e.id === id)
+    if (ev) {
+      const [ey, em, ed] = ev.date.split('-').map(Number)
+      const evDate = new Date(ey, em - 1, ed)
+      const mondayOf = (x: Date) => addDays(new Date(x.getFullYear(), x.getMonth(), x.getDate()), -((x.getDay() + 6) % 7))
+      setWeekOffset(Math.round((mondayOf(evDate).getTime() - mondayOf(now).getTime()) / (7 * 86400000)))
+      setDay(ev.date)
+      setViewing(ev)
+    }
+    const next = new URLSearchParams(params)
+    next.delete('event')
+    setParams(next, { replace: true })
+  }, [params, setParams])
   useEffect(() => {
     if (params.get('add') !== '1') return
     askWhatToAdd(nextHalfHour())
@@ -789,9 +909,10 @@ export default function Calendar() {
         <div className="cal-week">{dayStrip}</div>
       </div>
       <div className="section-head vtl-head"><h2>{dayLabel}</h2><Chip tone="purple">{shown.length} {shown.length === 1 ? 'plan' : 'plans'}</Chip></div>
-      <DayTimeline events={shown} isToday={isToday} nowH={nowH} onPick={askWhatToAdd} onEdit={openEvent} onMove={(ev, start, end) => setPendingMove({ ev, start, end })} />
+      <DayTimeline events={shown} isToday={isToday} nowH={nowH} pending={drawing} onPick={askWhatToAdd} onEdit={openEvent} onMove={(ev, start, end) => setPendingMove({ ev, start, end })} />
 
       <Sheet open={menu} title="What do you want to add?" icon={<Plus aria-hidden />} tone="bg-purple" onClose={() => setMenu(false)}>
+        {pendingStart !== null && <p className="muted add-when">{selected.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {timeLabel(pendingStart)}{pendingEnd !== null ? ` – ${timeLabel(pendingEnd)}` : ''}</p>}
         <div className="add-menu">
           <button type="button" className="add-opt" onClick={() => { setMenu(false); setAdding(startAt()) }}>
             <span className="add-ico" aria-hidden><CalendarDays size={22} /></span>
@@ -801,7 +922,7 @@ export default function Calendar() {
             <span className="add-ico" aria-hidden><KeyRound size={22} /></span>
             <span className="grow"><b>Reservation</b><small>Bathroom, kitchen, living room</small></span>
           </button>
-          <button type="button" className="add-opt" onClick={() => { setMenu(false); navigate('/app/chores?add=1') }}>
+          <button type="button" className="add-opt" onClick={() => { setMenu(false); navigate(`/app/chores?add=1&date=${day}&time=${String(Math.floor(startAt())).padStart(2, '0')}:${startAt() % 1 ? '30' : '00'}`) }}>
             <span className="add-ico" aria-hidden><ClipboardList size={22} /></span>
             <span className="grow"><b>Chore</b><small>Who does what, and when</small></span>
           </button>
@@ -829,7 +950,7 @@ export default function Calendar() {
           onClose={() => setEditingBath(false)}
         />
       )}
-      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} events={events} day={day} room={reserve ?? undefined} onRoom={(r) => setReserve(r)} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
+      {adding !== null && <EventPopup dayLabel={dayLabel} start={adding} end={pendingEnd ?? undefined} events={events} day={day} room={reserve ?? undefined} onRoom={(r) => setReserve(r)} preset={reserve ? `${reserve} reserved` : undefined} heading={reserve ? `Reserve the ${reserve.toLowerCase()}` : undefined} onSave={addEvent} onClose={() => { setAdding(null); setReserve(null) }} />}
       {editingHome && <HomeTimesPopup key={day} dayLabel={dayLabel} initial={homeOf(ME)} onSave={saveHome} onClose={() => setEditingHome(false)} />}
       {viewing && (
         <EventDetails
@@ -839,6 +960,14 @@ export default function Calendar() {
           chore={viewing.id.startsWith('chore-') ? chores.find((c) => `chore-${c.id}` === viewing.id) : undefined}
           onNote={(t) => addNote(viewing.id, t)}
           onSwap={(msg) => { const next = { ...viewing, swap: msg ? { by: ME, message: msg } : undefined }; store(events.map((e) => (e.id === viewing.id ? next : e))); setViewing(next); if (msg) say(`Request sent to ${byId(viewing.by ?? ME).name}.`) }}
+          onSwapAnswer={(a) => {
+            const sw = viewing.swap
+            if (!sw) return
+            const next: CalEvent = a === 'accept' ? { ...viewing, by: sw.by, who: [sw.by], swap: undefined } : { ...viewing, swap: undefined }
+            store(events.map((e) => (e.id === viewing.id ? next : e)))
+            setViewing(next)
+            say(a === 'accept' ? `${byId(sw.by).name} now has the ${(reservedRoom(viewing) ?? 'room').toLowerCase()}.` : `You said no to ${byId(sw.by).name}.`)
+          }}
           onClose={() => setViewing(null)}
           onEdit={() => { setEditing(viewing); setViewing(null) }}
           onDelete={() => { store(events.filter((e) => e.id !== viewing.id)); setViewing(null) }}
@@ -866,7 +995,7 @@ export default function Calendar() {
         const rr = reservedRoom(ev)
         const clash = rr ? roomClash(events, day, rr, start, end, ev.id) : undefined
         return (
-          <Sheet open title={own ? 'Change this event?' : 'Send a change request?'} icon={<Clock aria-hidden />} tone="bg-purple" onClose={() => setPendingMove(null)}>
+          <Sheet open title={ev.id.startsWith('chore-') ? 'Change this chore?' : own ? 'Change this event?' : 'Send a change request?'} icon={<Clock aria-hidden />} tone="bg-purple" onClose={() => setPendingMove(null)}>
             <p className="ev-confirm"><b>{title}</b><br />{timeLabel(ev.start)} – {timeLabel(ev.end)} → <b>{timeLabel(start)} – {timeLabel(end)}</b></p>
             {clash && <p className="room-check busy" role="alert"><b>{rr} is already reserved</b> from {timeLabel(clash.start)} to {timeLabel(clash.end)}. Pick another time.</p>}
             {!own && <p className="muted ev-confirm-note">This is {byId(ev.by ?? ME).name}’s event. It won’t change until they approve.</p>}

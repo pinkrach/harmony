@@ -9,12 +9,14 @@ import Payments from './pages/Payments'
 import Shopping from './pages/Shopping'
 import Calendar from './pages/Calendar'
 import { ChoresProvider } from './chores'
+import { ComplaintsProvider } from './complaints'
 import { GroceriesProvider } from './groceries'
 import { PaymentsProvider } from './payments'
 
 export default function App() {
   return (
     <ChoresProvider>
+    <ComplaintsProvider>
     <GroceriesProvider>
     <PaymentsProvider>
     <Routes>
@@ -39,6 +41,7 @@ export default function App() {
     </Routes>
     </PaymentsProvider>
     </GroceriesProvider>
+    </ComplaintsProvider>
     </ChoresProvider>
   )
 }

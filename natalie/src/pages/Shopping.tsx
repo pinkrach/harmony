@@ -6,7 +6,7 @@ import { Avatar, Check, PageHead, Rail } from '../components/ui'
 import { byId, roommates } from '../data'
 import { useGroceries, type Item } from '../groceries'
 
-const ME = 'you' // the logged-in roommate (Natalie) in this prototype
+const ME = 'you' // the logged-in roommate (you) in this prototype
 
 /** Row of roommate avatars to pick who is getting an item. */
 function WhoPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {

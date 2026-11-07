@@ -1,7 +1,7 @@
 export type Roommate = { id: string; name: string; initials: string; color: string; ink: string; home: boolean }
 
 export const roommates: Roommate[] = [
-  { id: 'you', name: 'Natalie', initials: 'N', color: '#3bb2ff', ink: '#06304d', home: true },
+  { id: 'you', name: 'You', initials: 'Y', color: '#3bb2ff', ink: '#06304d', home: true },
   { id: 'sofi', name: 'Sofi', initials: 'S', color: '#ff8a80', ink: '#4a1414', home: true },
   { id: 'diego', name: 'Diego', initials: 'D', color: '#ffc83d', ink: '#3a2a00', home: false },
   { id: 'mara', name: 'Mara', initials: 'M', color: '#ff8fc0', ink: '#4d1030', home: true },

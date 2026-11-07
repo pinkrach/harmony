@@ -61,6 +61,13 @@ function sampleEvents(): CalEvent[] {
     { id: 's4', date: dateKey(addDays(today, 1)), start: 17, end: 18, title: 'Sofi & Mara · study session', who: ['sofi', 'mara'], color: 'var(--blue-d)', by: 'sofi' },
     { id: 's5', date: dateKey(addDays(today, 1)), start: 10, end: 12, title: 'Kitchen reserved', who: ['sofi'], color: 'var(--blue-d)', by: 'sofi' },
     { id: 's6', date: dateKey(addDays(today, 1)), start: 18, end: 20, title: 'Living room reserved', who: ['you'], color: 'var(--blue-d)', by: 'you', swap: { by: 'mara', message: 'Hi! Could I use the living room then? I have friends coming over.' } },
+    // Friday, Nov 13: busy until 6 pm, evening left free
+    { id: 'f1', date: '2026-11-13', start: 7, end: 8, title: 'Morning run together', who: ['you', 'diego'], color: 'var(--brand)', by: 'diego', rsvp: { diego: 'yes' } },
+    { id: 'f2', date: '2026-11-13', start: 9, end: 10.5, title: 'Kitchen reserved', who: ['mara'], color: 'var(--blue-d)', by: 'mara' },
+    { id: 'f3', date: '2026-11-13', start: 11, end: 12, title: 'Package delivery · someone home', who: ['you'], color: 'var(--yellow-d)', by: 'you' },
+    { id: 'f4', date: '2026-11-13', start: 12.5, end: 13.5, title: 'Lunch with the roommates', who: ['you', 'sofi', 'diego', 'mara'], color: 'var(--purple)', by: 'sofi', rsvp: { sofi: 'yes', mara: 'yes' } },
+    { id: 'f6', date: '2026-11-13', start: 16, end: 17, title: 'Grocery run', who: ['you', 'mara'], color: 'var(--brand)', by: 'mara', rsvp: { mara: 'yes' } },
+    { id: 'f7', date: '2026-11-13', start: 17, end: 18, title: 'House meeting · bills and chores', who: ['you', 'sofi', 'diego', 'mara'], color: 'var(--yellow-d)', by: 'you', rsvp: { sofi: 'yes', diego: 'yes' } },
   ]
 }
 

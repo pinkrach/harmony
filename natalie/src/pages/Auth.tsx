@@ -53,7 +53,7 @@ export default function Auth() {
           {signup && (
             <div className="field">
               <label htmlFor="name">Your name</label>
-              <div className="input-wrap"><User size={20} className="icon" aria-hidden /><input id="name" className="input" placeholder="Natalie" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>
+              <div className="input-wrap"><User size={20} className="icon" aria-hidden /><input id="name" className="input" placeholder="You" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>
             </div>
           )}
           <div className="field">

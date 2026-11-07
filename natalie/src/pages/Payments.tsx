@@ -137,7 +137,7 @@ function BillCard({ b, i, onNudge, nudged }: { b: Bill; i: number; onNudge: (key
         </div>
         <div className={`amt-col ${dir}`}>
           <div className="amt">{owe ? '−' : owed ? '+' : ''}{money(amount)}</div>
-          <div className="amt-label">{owe ? 'your share' : owed ? 'still owed' : 'settled'}</div>
+          <div className="amt-label">{owe ? 'your share' : owed ? 'still owed' : unpaid(b).length ? 'you paid' : 'settled'}</div>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ function BillCard({ b, i, onNudge, nudged }: { b: Bill; i: number; onNudge: (key
           })}
         </div>
       )}
-      {dir === 'settled' && <div className="bill-paid"><Chip tone="teal"><CheckCircle2 size={14} aria-hidden /> Everyone’s paid</Chip></div>}
+      {dir === 'settled' && <div className="bill-paid"><Chip tone="teal"><CheckCircle2 size={14} aria-hidden /> {unpaid(b).length ? `You’re all set · waiting on ${unpaid(b).map((id) => byId(id).name).join(' and ')}` : 'Everyone’s paid'}</Chip></div>}
     </div>
   )
 }

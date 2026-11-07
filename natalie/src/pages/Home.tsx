@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, Check as Tick, ClipboardList, Clock, KeyRound, Wallet, X } from 'lucide-react'
+import { CalendarDays, Check as Tick, ClipboardList, Clock, KeyRound, Megaphone, Wallet, X } from 'lucide-react'
 import { Rail } from '../components/ui'
 import { byId } from '../data'
 import RoomScene from '../components/RoomScene'
@@ -8,6 +8,7 @@ import { dueLabel, useChores } from '../chores'
 import { dateKey, loadEvents, reservedRoom, saveEvents, timeLabel, type CalEvent } from '../events'
 import { share, usePayments, youOwe } from '../payments'
 import { useHomeHealth } from '../health'
+import { useComplaints } from '../complaints'
 import { castVote, loadDone, loadWheel, ownerOf, proposalText, saveWheel, stepNow } from '../rotation'
 import { roommates } from '../data'
 
@@ -29,7 +30,9 @@ const PRAISE = [
   'Nothing left to do. Go treat yourself!',
 ]
 
-type Item = { key: string; icon: ReactNode; title: string; sub: string; left?: string; mins: number; actions: ReactNode }
+const dayLabel = (date: string) => (date === dateKey(new Date()) ? 'Today' : new Date(`${date}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }))
+
+type Item = { key: string; to?: string; icon: ReactNode; title: string; sub: string; left?: string; mins: number; actions: ReactNode }
 
 /** "45 min left" / "2 h left" when something is due within a few hours. */
 function leftText(mins: number) {
@@ -41,6 +44,7 @@ function leftText(mins: number) {
 export default function Home() {
   const { bills } = usePayments()
   const { chores, toggle } = useChores()
+  const { pending: complaints, openAlert } = useComplaints()
   const health = useHomeHealth()
   const [events, setEvents] = useState<CalEvent[]>(loadEvents)
   const [now, setNow] = useState(() => new Date())
@@ -81,13 +85,20 @@ export default function Home() {
   )
 
   const items: Item[] = []
+  if (complaints.length > 0) {
+    items.push({
+      key: 'complaints', icon: <Megaphone size={20} />, mins: 10000,
+      title: complaints.length === 1 ? 'Anonymous chore complaint' : `${complaints.length} anonymous chore complaints`,
+      sub: complaints[0].text, actions: <button type="button" className="hm-btn" onClick={openAlert}>See</button>,
+    })
+  }
   // Invitations from roommates.
   for (const e of events) {
     const by = e.by ?? ME
     if (by !== ME && e.who.includes(ME) && !e.rsvp?.[ME] && e.date >= today) {
       items.push({
-        key: `inv-${e.id}`, icon: <CalendarDays size={20} />, mins: 9999,
-        title: `${byId(by).name} invited you to ${e.title}`, sub: `${e.date === today ? 'Today' : e.date} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
+        key: `inv-${e.id}`, to: e.id, icon: <CalendarDays size={20} />, mins: 9999,
+        title: `${byId(by).name} invited you to ${e.title}`, sub: `${dayLabel(e.date)} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
         actions: <>{btn('Decline', <X size={16} aria-hidden />, () => patch(e.id, { rsvp: { ...e.rsvp, [ME]: 'no' } }), true)}{btn('Accept', <Tick size={16} aria-hidden />, () => patch(e.id, { rsvp: { ...e.rsvp, [ME]: 'yes' } }))}</>,
       })
     }
@@ -95,8 +106,8 @@ export default function Home() {
     const room = reservedRoom(e)
     if (room && by !== ME && e.date >= today && !seen.includes(e.id)) {
       items.push({
-        key: `res-${e.id}`, icon: <KeyRound size={20} />, mins: 9998,
-        title: `${byId(by).name} reserved the ${room.toLowerCase()}`, sub: `${e.date === today ? 'Today' : new Date(`${e.date}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
+        key: `res-${e.id}`, to: e.id, icon: <KeyRound size={20} />, mins: 9998,
+        title: `${byId(by).name} reserved the ${room.toLowerCase()}`, sub: `${dayLabel(e.date)} · ${timeLabel(e.start)} – ${timeLabel(e.end)}`,
         actions: btn('Got it', <Tick size={16} aria-hidden />, () => markSeen(e.id)),
       })
     }
@@ -104,8 +115,8 @@ export default function Home() {
     if (room && by === ME && e.swap && e.swap.by !== ME) {
       const sw = e.swap
       items.push({
-        key: `swap-${e.id}`, icon: <KeyRound size={20} />, mins: 9997,
-        title: `${byId(sw.by).name} asked to switch the ${room.toLowerCase()}`, sub: `“${sw.message}”`,
+        key: `swap-${e.id}`, to: e.id, icon: <KeyRound size={20} />, mins: 9997,
+        title: `${byId(sw.by).name} asked to switch the ${room.toLowerCase()}`, sub: `${e.title} · ${dayLabel(e.date)} · ${timeLabel(e.start)} – ${timeLabel(e.end)} · “${sw.message}”`,
         actions: <>{btn('Decline', <X size={16} aria-hidden />, () => patch(e.id, { swap: undefined }), true)}{btn('Accept', <Tick size={16} aria-hidden />, () => patch(e.id, { by: sw.by, who: [sw.by], swap: undefined }))}</>,
       })
     }
@@ -113,8 +124,8 @@ export default function Home() {
     if (by === ME && e.proposal && e.proposal.by !== ME) {
       const p = e.proposal
       items.push({
-        key: `prop-${e.id}`, icon: <Clock size={20} />, mins: 9999,
-        title: `${byId(p.by).name} wants to move ${e.title}`, sub: `New time: ${timeLabel(p.start)} – ${timeLabel(p.end)}`,
+        key: `prop-${e.id}`, to: e.id, icon: <Clock size={20} />, mins: 9999,
+        title: `${byId(p.by).name} wants to move ${e.title}`, sub: `${dayLabel(e.date)} · new time ${timeLabel(p.start)} – ${timeLabel(p.end)}`,
         actions: <>{btn('Decline', <X size={16} aria-hidden />, () => patch(e.id, { proposal: undefined }), true)}{btn('Approve', <Tick size={16} aria-hidden />, () => patch(e.id, { start: p.start, end: p.end, proposal: undefined }))}</>,
       })
     }
@@ -177,11 +188,14 @@ export default function Home() {
           {items.length === 0 && <p className="hm-empty">You’re all caught up 🎉</p>}
           {items.map((it) => (
             <div className="hm-note" key={it.key}>
-              <span className="hm-ico" aria-hidden>{it.icon}</span>
-              <div className="hm-txt">
-                <b>{it.title}</b>
-                <small>{it.sub}{it.left && <> · <em>{it.left}</em></>}</small>
-              </div>
+              {(() => {
+                const body = (<><span className="hm-ico" aria-hidden>{it.icon}</span>
+                  <div className="hm-txt">
+                    <b>{it.title}</b>
+                    <small>{it.sub}{it.left && <> · <em>{it.left}</em></>}</small>
+                  </div></>)
+                return it.to ? <Link to={`/app/calendar?event=${it.to}`} className="hm-link" aria-label={`${it.title}. Open in the calendar`}>{body}</Link> : <div className="hm-link">{body}</div>
+              })()}
               <div className="hm-acts">{it.actions}</div>
             </div>
           ))}

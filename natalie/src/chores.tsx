@@ -23,9 +23,14 @@ const seed = (): Chore[] => [
   { id: 3, t: 'Clean my room', emoji: '🧹', who: 'mara', date: iso(addDays(2)), time: '10:00', done: false, room: 'Other', vis: 'private' },
   { id: 4, t: 'Rake the leaves on the terrace', emoji: '🍂', who: 'sofi', date: iso(addDays(0)), time: '', done: true, room: 'Other' },
   { id: 5, t: 'Make my bed', emoji: '🛏️', who: 'you', date: iso(addDays(0)), time: '', done: true, room: 'Other', vis: 'private' },
+  // Friday, Nov 13: a busy day up to 6 pm, then the evening stays free
+  { id: 6, t: 'Take out the recycling', emoji: '♻️', who: 'you', date: '2026-11-13', time: '08:30', done: false, room: 'Kitchen' },
+  { id: 7, t: 'Water the plants', emoji: '🪴', who: 'sofi', date: '2026-11-13', time: '09:30', done: false, room: 'Living room' },
+  { id: 8, t: 'Do the laundry', emoji: '🧺', who: 'you', date: '2026-11-13', time: '13:00', done: false, room: 'Other' },
+  { id: 9, t: 'Wipe the kitchen counters', emoji: '🧽', who: 'diego', date: '2026-11-13', time: '15:30', done: false, room: 'Kitchen' },
 ]
 
-type Store = { chores: Chore[]; reminded: number[]; remind: (id: number) => void; add: (c: Omit<Chore, 'id' | 'done'>) => void; toggle: (id: number) => void }
+type Store = { chores: Chore[]; reminded: number[]; remind: (id: number) => void; add: (c: Omit<Chore, 'id' | 'done'>) => void; toggle: (id: number) => void; update: (id: number, patch: Partial<Chore>) => void }
 const Ctx = createContext<Store | null>(null)
 
 export function ChoresProvider({ children }: { children: ReactNode }) {
@@ -34,7 +39,8 @@ export function ChoresProvider({ children }: { children: ReactNode }) {
   const remind: Store['remind'] = (id) => setReminded((l) => (l.includes(id) ? l : [...l, id]))
   const add: Store['add'] = (c) => setChores((l) => [{ ...c, id: Date.now(), done: false }, ...l])
   const toggle: Store['toggle'] = (id) => setChores((l) => l.map((c) => (c.id === id ? { ...c, done: !c.done } : c)))
-  return <Ctx.Provider value={{ chores, reminded, remind, add, toggle }}>{children}</Ctx.Provider>
+  const update: Store['update'] = (id, patch) => setChores((l) => l.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+  return <Ctx.Provider value={{ chores, reminded, remind, add, toggle, update }}>{children}</Ctx.Provider>
 }
 
 export function useChores() {

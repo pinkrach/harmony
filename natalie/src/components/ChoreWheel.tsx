@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check as CheckIcon, Maximize2, Plus, RotateCw, X } from 'lucide-react'
 import { Avatar } from './ui'
 import { Sheet } from './ui'
@@ -79,13 +79,30 @@ export default function ChoreWheelCard() {
 
   const base = stepNow(freq)
   const step = base + ahead
-  const mineK = (st: number) => Math.max(0, packs.findIndex((_, k) => ownerOf(k, st, n) === 0))
-  const aim = (st: number) => 90 - mineK(st) * turnStep // turns the slice that is yours to face the right
-  const [turn, setTurn] = useState(() => aim(base))
-  const spinTo = (st: number) => setTurn((t) => { const d = (((aim(st) - t) % 360) + 360) % 360; return d === 0 ? t : t + d })
+  // Whose tasks the card shows: you first; turn the wheel to see each roommate's slice (view only).
+  const [who, setWho] = useState(0)
+  const sliceOf = (st: number, w: number) => Math.max(0, packs.findIndex((_, k) => ownerOf(k, st, n) === w))
+  const aim = (st: number, w = who) => 90 - sliceOf(st, w) * turnStep // turns that person's slice to face the right
+  const [turn, setTurn] = useState(() => aim(base, 0))
+  const spinTo = (st: number, w = who) => setTurn((t) => { const d = (((aim(st, w) - t) % 360) + 360) % 360; return d === 0 ? t : t + d })
   useEffect(() => { setAhead(0); spinTo(stepNow(freq)) }, [freq]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = (a: number) => { setAhead(a); spinTo(base + a) }
+  const showPerson = (w: number) => { setWho(w); spinTo(base + ahead, w) }
+  // Swipe the wheel with a finger (or drag with the mouse): down turns to the next roommate, up to the one before. A plain tap still opens the full wheel.
+  const swipe = useRef<{ y: number; moved: boolean } | null>(null)
+  const onDown = (e: React.PointerEvent) => { swipe.current = { y: e.clientY, moved: false }; e.currentTarget.setPointerCapture?.(e.pointerId) }
+  const onMove = (e: React.PointerEvent) => {
+    const s = swipe.current
+    if (!s) return
+    const dy = e.clientY - s.y
+    if (Math.abs(dy) < 34) return
+    s.y = e.clientY; s.moved = true
+    navigator.vibrate?.(6)
+    showPerson((who + (dy > 0 ? 1 : -1) + n) % n)
+  }
+  const onUp = () => { const moved = swipe.current?.moved; swipe.current = null; if (moved) window.setTimeout(() => { swipe.current = null; justSwiped.current = false }, 60); justSwiped.current = !!moved }
+  const justSwiped = useRef(false)
   const close = () => { setOpen(false); setPicked(null); setNote(null); if (ahead !== 0) go(0) }
   const commit = (w: WheelState) => { setWheel(w); saveWheel(w) }
   const vote = (id: string, voter: string, v: 'yes' | 'no') => {
@@ -105,7 +122,9 @@ export default function ChoreWheelCard() {
     setNote('Sent to your roommates. It changes once everyone agrees.')
   }
 
-  const mineNow = useMemo(() => packs.map((p, k) => ({ p, k })).filter(({ k }) => ownerOf(k, base, n) === 0), [packs, base, n])
+  const mineNow = useMemo(() => packs.map((p, k) => ({ p, k })).filter(({ k }) => ownerOf(k, base, n) === who), [packs, base, n, who])
+  const person = roommates[who]
+  const isMe = who === 0
   const toggle = (key: string) => { const next = { ...done, [key]: !done[key] }; setDone(next); saveDone(next) }
   const addChore = (k: number) => {
     const t = draft.trim()
@@ -119,29 +138,42 @@ export default function ChoreWheelCard() {
   return (
     <div className="cw-stick">
     <section className="cw" aria-label="Chore wheel">
-      <button type="button" className="cw-half" onClick={() => setOpen(true)} aria-label="Open the chore wheel">
+      <button type="button" className="cw-half" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onClick={() => { if (!justSwiped.current) setOpen(true) }} aria-label="Open the chore wheel. Swipe up or down to see each roommate's chores">
         <Wheel packs={packs} step={base} freq={freq} turn={turn} half />
         <span className="cw-hint" aria-hidden><Maximize2 size={14} /></span>
       </button>
 
       <div className="cw-check">
-        <h2>{freqNow[freq]}</h2>
-        {mineNow.length === 0 && <p className="cw-none">Nothing from the wheel for you right now.</p>}
+        <h2>{isMe ? 'Your household chores' : `${person.name}’s chores`}</h2>
+        <small className="cw-when">{freqNow[freq]}{!isMe && ' · view only'}</small>
+        {mineNow.length === 0 && <p className="cw-none">{isMe ? 'Nothing from the wheel for you right now.' : `Nothing for ${person.name} right now.`}</p>}
         {mineNow.map(({ p }) => (
           <div className="cw-group" key={p.id}>
             {p.chores.map((c) => {
               const key = `${freq}${base}:${c.id}`
               const isDone = !!done[key]
-              return (
+              return isMe ? (
                 <button type="button" key={c.id} className={`cw-task${isDone ? ' done' : ''}`} role="checkbox" aria-checked={isDone} onClick={() => toggle(key)}>
                   <span className="cw-box" aria-hidden>{isDone && <CheckIcon size={14} strokeWidth={4} />}</span>
                   <span>{c.emoji} {c.t}</span>
                 </button>
+              ) : (
+                <div key={c.id} className={`cw-task view${isDone ? ' done' : ''}`}>
+                  <span className="cw-bullet" aria-hidden />
+                  <span>{c.emoji} {c.t}{isDone && <span className="sr-only"> (done)</span>}</span>
+                </div>
               )
             })}
           </div>
         ))}
-        <small className="cw-freq">{freq === 'never' ? 'Stays with you' : `Rotates ${freqLabel[freq].toLowerCase()}`}</small>
+        <div className="cw-who" role="group" aria-label="Whose tasks to show">
+          {roommates.map((r, i) => (
+            <button type="button" key={r.id} className={`cw-who-btn${who === i ? ' on' : ''}`} aria-pressed={who === i} aria-label={i === 0 ? 'Your household chores' : `${r.name}’s chores`} onClick={() => showPerson(i)}>
+              <Avatar id={r.id} size={28} />
+            </button>
+          ))}
+        </div>
+        <small className="cw-freq">{freq === 'never' ? 'Slices stay the same' : `Rotates ${freqLabel[freq].toLowerCase()}`}</small>
       </div>
 
       <Sheet open={open} title="Chore wheel" icon={<RotateCw aria-hidden />} tone="bg-purple" onClose={close}>

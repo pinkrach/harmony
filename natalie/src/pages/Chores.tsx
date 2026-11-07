@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Lock, Users } from 'lucide-react'
 import ChoreWheelCard from '../components/ChoreWheel'
-import EveryoneChores from '../components/EveryoneChores'
-import { BellRing, CalendarDays, Check as CheckIcon, CheckCheck, ChevronDown, ClipboardPlus, Clock, CookingPot, Plus, Sofa, ShowerHead, Home as HomeIcon, type LucideIcon } from 'lucide-react'
-import { Avatar, Check, Chip, PageHead, Segmented, Sheet } from '../components/ui'
+import { Megaphone, BellRing, CalendarDays, Check as CheckIcon, CheckCheck, ChevronDown, ClipboardPlus, Clock, CookingPot, Plus, Sofa, ShowerHead, Home as HomeIcon, type LucideIcon } from 'lucide-react'
+import { ComplaintSheet } from '../components/ComplaintAlert'
+import { Avatar, Check, Chip, PageHead, Sheet } from '../components/ui'
 import { Celebration, markSeen, wasSeen } from '../components/Moments'
 import { TimeField } from '../components/TimeField'
 import { byId, roommates } from '../data'
@@ -16,12 +16,14 @@ const roomEmoji: Record<Room, string> = { Kitchen: '🍽️', 'Living room': '�
 const toHours = (t: string) => { const [h, m] = t.split(':').map(Number); return h + (m || 0) / 60 }
 const toClock = (v: number) => { const total = Math.min(23 * 60 + 59, Math.round(v * 60)); return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` }
 
-function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (c: Omit<Chore, 'id' | 'done'>) => void }) {
+function NewChore({ open, onClose, onAdd, presetDate, presetTime }: { open: boolean; onClose: () => void; onAdd: (c: Omit<Chore, 'id' | 'done'>) => void; presetDate?: string; presetTime?: string }) {
   const [t, setT] = useState('')
   const [picked, setPicked] = useState(iso(new Date()))
   const [time, setTime] = useState('')
   const [room, setRoom] = useState<Room>('Kitchen')
   const [vis, setVis] = useState<'public' | 'private'>('public')
+  // Coming from a tap or drag on the calendar: start with that day and time.
+  useEffect(() => { if (open && presetDate) { setPicked(presetDate); setTime(presetTime ?? '') } }, [open, presetDate, presetTime])
 
   const date = new Date(`${picked || iso(new Date())}T00:00`)
   const summary = `${dayText(date)}${time ? ` · ${timeText(time)}` : ''}`
@@ -79,16 +81,19 @@ function NewChore({ open, onClose, onAdd }: { open: boolean; onClose: () => void
 export default function Chores() {
   const [params, setParams] = useSearchParams()
   const [sheet, setSheet] = useState(params.get('add') === '1')
+  const [preset, setPreset] = useState<{ date?: string; time?: string }>({ date: params.get('date') ?? undefined, time: params.get('time') ?? undefined })
   useEffect(() => {
     if (params.get('add') !== '1') return
+    setPreset({ date: params.get('date') ?? undefined, time: params.get('time') ?? undefined })
     setSheet(true)
     const next = new URLSearchParams(params)
-    next.delete('add')
+    next.delete('add'); next.delete('date'); next.delete('time')
     setParams(next, { replace: true })
   }, [params, setParams])
   const { chores, add, toggle, reminded, remind } = useChores()
-  const [view, setView] = useState(0)
   const [closed, setClosed] = useState<Room[]>([])
+  const [complain, setComplain] = useState(false)
+  const [sent, setSent] = useState(false)
 
   const [cheer, setCheer] = useState(false)
   const addChore = (c: Omit<Chore, 'id' | 'done'>) => {
@@ -96,7 +101,7 @@ export default function Chores() {
     setSheet(false)
     if (!wasSeen('first-chore')) { markSeen('first-chore'); setCheer(true) }
   }
-  // "Mine" is every chore you put on yourself, shared or private, so you can check them off. "Everyone" shows what the others have on the wheel.
+  // Your own chores, shared or private, so you can check them off. What the others do is on the wheel.
   const shown = chores.filter((c) => c.who === 'you')
   const left = shown.filter((c) => !c.done)
   const done = shown.filter((c) => c.done)
@@ -129,10 +134,9 @@ export default function Chores() {
       <div className="chores-layout">
       <div className="chores-main">
       <ChoreWheelCard />
-      <Segmented options={['Mine', 'Everyone']} initial={0} onChange={setView} />
       <div style={{ height: 16 }} />
+      <div className="section-head cw-personal-head"><h2>Your personal chores</h2></div>
 
-      {view === 1 ? <EveryoneChores /> : (
       <div className="stack room-groups">
         {shown.length === 0 && <div className="more">No chores of your own yet. Tap New chore to add one.</div>}
         {rooms.map((r) => {
@@ -153,12 +157,16 @@ export default function Chores() {
           )
         })}
       </div>
-      )}
       </div>
       </div>
 
-      <button className="fab" aria-label="New chore" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">New chore</span></button>
-      <NewChore open={sheet} onClose={() => setSheet(false)} onAdd={addChore} />
+      <div className="fab-row">
+        <button className="fab fab-red" aria-label="Chore complaint" onClick={() => setComplain(true)}><Megaphone size={22} aria-hidden /><span className="fab-label">Complaint</span></button>
+        <button className="fab" aria-label="New chore" onClick={() => setSheet(true)}><Plus size={26} aria-hidden /><span className="fab-label">New chore</span></button>
+      </div>
+      <ComplaintSheet open={complain} onClose={() => setComplain(false)} onSent={() => { setComplain(false); setSent(true); window.setTimeout(() => setSent(false), 3200) }} />
+      {sent && <div className="toast-note" role="status">Sent anonymously. Everyone in the house will see it.</div>}
+      <NewChore open={sheet} onClose={() => setSheet(false)} onAdd={addChore} presetDate={preset.date} presetTime={preset.time} />
       {cheer && <Celebration onClose={() => setCheer(false)}>You added your first chore! 🎉</Celebration>}
     </>
   )

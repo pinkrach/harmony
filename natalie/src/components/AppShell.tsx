@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { CalendarDays, Carrot, ClipboardList, Flame, Home, Wallet } from 'lucide-react'
 import { Pip } from './Pip'
 import { Avatar } from './ui'
+import { ComplaintAlert } from './ComplaintAlert'
 
 /** One accent color across the app (Harmony lavender). */
 const tabs = [
@@ -42,6 +43,7 @@ export default function AppShell() {
   const tone = tabs.find((t) => pathname.startsWith(t.to))?.tone ?? 'brand'
   return (
     <div className={home ? 'app app-home' : 'app'} data-tone={tone}>
+      <ComplaintAlert />
       <aside className="sidebar" aria-label="Main">
         <div className="brand">
           <Pip size={40} />
@@ -62,7 +64,7 @@ export default function AppShell() {
             <Link to="/preferences" className="row card flat" style={{ padding: 10 }}>
               <Avatar id="you" size={40} />
               <div className="grow">
-                <b>Natalie</b>
+                <b>You</b>
                 <div className="muted" style={{ fontSize: 13, fontWeight: 700 }}>Casa Girasol</div>
               </div>
             </Link>
