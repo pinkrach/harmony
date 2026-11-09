@@ -10,6 +10,7 @@ import Shopping from './pages/Shopping'
 import Calendar from './pages/Calendar'
 import { ChoresProvider } from './chores'
 import { ComplaintsProvider } from './complaints'
+import { ChatProvider } from './chat'
 import { GroceriesProvider } from './groceries'
 import { PaymentsProvider } from './payments'
 
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <ChoresProvider>
     <ComplaintsProvider>
+    <ChatProvider>
     <GroceriesProvider>
     <PaymentsProvider>
     <Routes>
@@ -41,6 +43,7 @@ export default function App() {
     </Routes>
     </PaymentsProvider>
     </GroceriesProvider>
+    </ChatProvider>
     </ComplaintsProvider>
     </ChoresProvider>
   )

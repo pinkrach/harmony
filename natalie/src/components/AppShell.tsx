@@ -5,6 +5,7 @@ import { CalendarDays, Carrot, ClipboardList, Flame, Home, Wallet } from 'lucide
 import { Pip } from './Pip'
 import { Avatar } from './ui'
 import { ComplaintAlert } from './ComplaintAlert'
+import { ChatButton, ChatPanel } from './Chat'
 
 /** One accent color across the app (Harmony lavender). */
 const tabs = [
@@ -44,6 +45,7 @@ export default function AppShell() {
   return (
     <div className={home ? 'app app-home' : 'app'} data-tone={tone}>
       <ComplaintAlert />
+      <ChatPanel />
       <aside className="sidebar" aria-label="Main">
         <div className="brand">
           <Pip size={40} />
@@ -78,6 +80,8 @@ export default function AppShell() {
             <Pip size={34} />
             Harmony
           </div>
+          <span className="grow" />
+          <ChatButton />
         </header>
         <main className="main" key={pathname}>
           <div className="page">
