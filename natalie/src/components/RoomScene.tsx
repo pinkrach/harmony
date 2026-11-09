@@ -16,12 +16,19 @@ const message = (removed: number) =>
   : removed < N ? 'Almost sparkling!'
   : 'Sparkling clean! Nice work, team.'
 
-const clamp = (v: number) => Math.max(0, Math.min(1, v))
-
 const sparkles: [number, number][] = [[14, 20], [38, 14], [66, 12], [86, 28], [28, 56], [78, 62]]
 
+/** One sharp photo at a time: lots left → dirty, mid → medium, nearly done → clean. */
+const roomFor = (done: number, total: number) => {
+  const left = Math.max(0, total - done)
+  if (total === 0 || left === 0) return roomClean
+  if (left / total > 2 / 3) return roomDirty
+  if (left / total > 1 / 3) return roomMedium
+  return roomClean
+}
+
 /**
- * Chores room built from three photos (very dirty → half clean → spotless) that cross-fade as chores get done.
+ * Chores room: one of three photos (dirty / medium / clean) based on chores left.
  * Pip stands on the rug and changes mood.
  */
 export default function RoomScene({ done, total, bare = false }: { done: number; total: number; bare?: boolean }) {
@@ -30,6 +37,7 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
   const clean = removed / N
   const spark = removed === N
   const mood = pipMood(removed)
+  const room = roomFor(done, total)
   const prevDone = useRef(done)
   const [poke, setPoke] = useState(0)
   useEffect(() => {
@@ -40,9 +48,7 @@ export default function RoomScene({ done, total, bare = false }: { done: number;
   return (
     <figure className={`room${spark ? ' spark' : ''}${bare ? ' bare' : ''}`} style={{ '--clean': clean } as CSSProperties}>
       <div className="room-stage room-photo" role="img" aria-label={`Living room, ${done} of ${total} chores done. ${message(removed)}`}>
-        <img className="room-img" src={roomDirty} alt="" draggable={false} />
-        <img className="room-img" src={roomMedium} alt="" draggable={false} style={{ opacity: clamp(clean * 2) }} />
-        <img className="room-img" src={roomClean} alt="" draggable={false} style={{ opacity: clamp(clean * 2 - 1) }} />
+        <img className="room-img" src={room} alt="" draggable={false} />
 
         <div className="sparkles" aria-hidden>
           {sparkles.map(([x, y], i) => (
