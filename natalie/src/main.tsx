@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import PhoneMode from './components/PhoneMode'
 import './index.css'
+import { initAnalytics } from './analytics'
+
+initAnalytics()
 
 // Harmony opens in the light theme. Dark is opt-in: localStorage.setItem('harmony-theme', 'dark')
 try {
