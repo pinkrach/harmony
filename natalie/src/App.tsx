@@ -1,6 +1,4 @@
-import { useEffect } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { posthog } from './analytics'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from './components/AppShell'
 import Splash from './pages/Splash'
 import Auth from './pages/Auth'
@@ -16,9 +14,6 @@ import { GroceriesProvider } from './groceries'
 import { PaymentsProvider } from './payments'
 
 export default function App() {
-  // One pageview per screen, so PostHog sees the app's routes as pages.
-  const { pathname } = useLocation()
-  useEffect(() => { posthog.capture('$pageview', { $current_url: window.location.href }) }, [pathname])
   return (
     <ChoresProvider>
     <ComplaintsProvider>

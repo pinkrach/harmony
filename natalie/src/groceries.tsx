@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { isPostHogConfigured, posthog } from './posthog'
 
 export type Item = { id: string; n: string; who: string; bought: boolean }
 
@@ -38,10 +39,25 @@ export function GroceriesProvider({ children }: { children: ReactNode }) {
     setItems(next)
     try { sessionStorage.setItem(ITEMS_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
   }
-  const add: Store['add'] = (n, who) => save([...items, { id: newId(), n, who, bought: false }])
-  const remove: Store['remove'] = (id) => save(items.filter((it) => it.id !== id))
-  const assign: Store['assign'] = (id, who) => save(items.map((it) => (it.id === id ? { ...it, who } : it)))
-  const toggle: Store['toggle'] = (id) => save(items.map((it) => (it.id === id ? { ...it, bought: !it.bought } : it)))
+  const add: Store['add'] = (n, who) => {
+    if (isPostHogConfigured) posthog.capture('grocery_item_added', { assigned_to_self: who === 'you' })
+    save([...items, { id: newId(), n, who, bought: false }])
+  }
+  const remove: Store['remove'] = (id) => {
+    const item = items.find((it) => it.id === id)
+    if (item && isPostHogConfigured) posthog.capture('grocery_item_removed', { was_purchased: item.bought })
+    save(items.filter((it) => it.id !== id))
+  }
+  const assign: Store['assign'] = (id, who) => {
+    const item = items.find((it) => it.id === id)
+    if (item && item.who !== who && isPostHogConfigured) posthog.capture('grocery_item_assignment_changed', { assigned_to_self: who === 'you' })
+    save(items.map((it) => (it.id === id ? { ...it, who } : it)))
+  }
+  const toggle: Store['toggle'] = (id) => {
+    const item = items.find((it) => it.id === id)
+    if (item && isPostHogConfigured) posthog.capture('grocery_item_purchase_toggled', { purchased: !item.bought })
+    save(items.map((it) => (it.id === id ? { ...it, bought: !it.bought } : it)))
+  }
   return <Ctx.Provider value={{ items, add, remove, assign, toggle }}>{children}</Ctx.Provider>
 }
 

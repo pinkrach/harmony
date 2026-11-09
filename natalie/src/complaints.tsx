@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { isPostHogConfigured, posthog } from './posthog'
 
 /* Chore complaints. Anyone can file one; the others see it on a dark screen when they open the app,
    and it only goes away once someone says it has been taken care of. Complaints are anonymous: `by` is kept only so we know which one is yours, and it is never shown. Prototype data lives in sessionStorage. */
@@ -63,6 +64,7 @@ export function ComplaintsProvider({ children }: { children: ReactNode }) {
   const file: Store['file'] = (text) => {
     const id = `cp${Date.now()}`
     const c: Complaint = { id, by: 'you', text, at: Date.now() }
+    if (isPostHogConfigured) posthog.capture('complaint_filed')
     commit([c, ...complaints])
     // Everyone gets a red heads-up (in this demo, you see it too).
     window.clearTimeout(timer.current)
@@ -73,7 +75,11 @@ export function ComplaintsProvider({ children }: { children: ReactNode }) {
     setSeen(next)
     try { sessionStorage.setItem(SEEN_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
   }
-  const resolve: Store['resolve'] = (id) => commit(complaints.map((c) => (c.id === id ? { ...c, resolved: true } : c)))
+  const resolve: Store['resolve'] = (id) => {
+    const complaint = complaints.find((c) => c.id === id)
+    if (complaint && !complaint.resolved && isPostHogConfigured) posthog.capture('complaint_resolved')
+    commit(complaints.map((c) => (c.id === id ? { ...c, resolved: true } : c)))
+  }
   const closeAlert = () => {
     setAlertOpen(false)
     const next = Array.from(new Set([...seen, ...pending.map((c) => c.id)]))

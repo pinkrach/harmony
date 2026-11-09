@@ -9,6 +9,7 @@ import { iso, type Chore } from '../chores'
 import { byId, hourLabel, presence, roommates } from '../data'
 import { useChores } from '../chores'
 import { choresToEvents, dateKey, endOfYear, loadEvents, occursOn, repeatLabels, reservedRoom, ROOMS, saveEvents, timeLabel, type CalEvent, type Note, type Repeat, type Rsvp } from '../events'
+import { isPostHogConfigured, posthog } from '../posthog'
 
 /* ───────── Time helpers ───────── */
 
@@ -857,16 +858,19 @@ export default function Calendar() {
   }
   const updateEvent = (fields: EventFields) => {
     if (!editing) return
+    if (isPostHogConfigured) posthog.capture('calendar_event_updated', { is_reservation: Boolean(reservedRoom(editing)), repeats: fields.repeat !== 'none' })
     store(events.map((e) => (e.id === editing.id ? { ...e, ...fields } : e)))
     setEditing(null)
   }
   const deleteEvent = () => {
     if (!editing) return
+    if (isPostHogConfigured) posthog.capture('calendar_event_deleted', { is_reservation: Boolean(reservedRoom(editing)) })
     store(events.filter((e) => e.id !== editing.id))
     setEditing(null)
   }
 
   const addEvent = (e: EventFields) => {
+    if (isPostHogConfigured) posthog.capture('calendar_event_created', { is_reservation: Boolean(reserve), invitee_count: e.who.length, repeats: e.repeat !== 'none' })
     const next = [...events, { ...e, id: `e${Date.now()}-${idSeq.current++}`, date: day, by: ME, color: reserve ? 'var(--blue-d)' : NEW_EVENT_COLOR }]
     setEvents(next)
     saveEvents(next)
@@ -970,8 +974,8 @@ export default function Calendar() {
           }}
           onClose={() => setViewing(null)}
           onEdit={() => { setEditing(viewing); setViewing(null) }}
-          onDelete={() => { store(events.filter((e) => e.id !== viewing.id)); setViewing(null) }}
-          onRsvp={(r) => { const next = { ...viewing, rsvp: { ...viewing.rsvp, [ME]: r } }; store(events.map((e) => (e.id === viewing.id ? next : e))); setViewing(next) }}
+          onDelete={() => { if (isPostHogConfigured) posthog.capture('calendar_event_deleted', { is_reservation: Boolean(reservedRoom(viewing)) }); store(events.filter((e) => e.id !== viewing.id)); setViewing(null) }}
+          onRsvp={(r) => { if (isPostHogConfigured) posthog.capture('calendar_event_rsvp_updated', { response: r }); const next = { ...viewing, rsvp: { ...viewing.rsvp, [ME]: r } }; store(events.map((e) => (e.id === viewing.id ? next : e))); setViewing(next) }}
           onProposal={answerProposal}
           onBath={() => { setViewing(null); setEditingBath(true) }}
           onChores={() => navigate('/app/chores')}

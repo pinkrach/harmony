@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { Droplets, Flame, Home, Receipt, Wifi, Zap, type LucideIcon } from 'lucide-react'
 import { addDays, iso } from './chores'
+import { isPostHogConfigured, posthog } from './posthog'
 
 export type Kind = 'wifi' | 'power' | 'water' | 'rent' | 'gas' | 'other'
 export const kinds: Record<Kind, { label: string; icon: LucideIcon; tone: string }> = {
@@ -32,8 +33,15 @@ const Ctx = createContext<Store | null>(null)
 
 export function PaymentsProvider({ children }: { children: ReactNode }) {
   const [bills, setBills] = useState(seed)
-  const add: Store['add'] = (b) => setBills((l) => [{ ...b, id: Date.now(), paid: [b.payer] }, ...l])
-  const markPaid: Store['markPaid'] = (id, who) => setBills((l) => l.map((b) => (b.id === id && !b.paid.includes(who) ? { ...b, paid: [...b.paid, who] } : b)))
+  const add: Store['add'] = (b) => {
+    if (isPostHogConfigured) posthog.capture('bill_created', { bill_kind: b.kind, payer_is_self: b.payer === 'you', split_count: b.split.length })
+    setBills((l) => [{ ...b, id: Date.now(), paid: [b.payer] }, ...l])
+  }
+  const markPaid: Store['markPaid'] = (id, who) => {
+    const bill = bills.find((b) => b.id === id)
+    if (bill && !bill.paid.includes(who) && isPostHogConfigured) posthog.capture('bill_payment_marked', { bill_kind: bill.kind, paid_by_self: who === 'you' })
+    setBills((l) => l.map((b) => (b.id === id && !b.paid.includes(who) ? { ...b, paid: [...b.paid, who] } : b)))
+  }
   return <Ctx.Provider value={{ bills, add, markPaid }}>{children}</Ctx.Provider>
 }
 

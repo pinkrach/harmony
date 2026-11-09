@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { isPostHogConfigured, posthog, posthogLogger } from './posthog'
 
 export const rooms = ['Kitchen', 'Living room', 'Bathroom', 'Other'] as const
 export type Room = (typeof rooms)[number]
@@ -37,8 +38,21 @@ export function ChoresProvider({ children }: { children: ReactNode }) {
   const [chores, setChores] = useState(seed)
   const [reminded, setReminded] = useState<number[]>([])
   const remind: Store['remind'] = (id) => setReminded((l) => (l.includes(id) ? l : [...l, id]))
-  const add: Store['add'] = (c) => setChores((l) => [{ ...c, id: Date.now(), done: false }, ...l])
-  const toggle: Store['toggle'] = (id) => setChores((l) => l.map((c) => (c.id === id ? { ...c, done: !c.done } : c)))
+  const add: Store['add'] = (c) => {
+    if (isPostHogConfigured) {
+      posthog.capture('chore_created', { room: c.room, visibility: c.vis ?? 'public', has_due_time: Boolean(c.time) })
+      posthogLogger.info('chore created', { room: c.room, visibility: c.vis ?? 'public', has_due_time: Boolean(c.time) })
+    }
+    setChores((l) => [{ ...c, id: Date.now(), done: false }, ...l])
+  }
+  const toggle: Store['toggle'] = (id) => {
+    const chore = chores.find((c) => c.id === id)
+    if (chore && isPostHogConfigured) {
+      posthog.capture('chore_completion_toggled', { completed: !chore.done, room: chore.room, visibility: chore.vis ?? 'public' })
+      posthogLogger.info('chore completion toggled', { completed: !chore.done, room: chore.room, visibility: chore.vis ?? 'public' })
+    }
+    setChores((l) => l.map((c) => (c.id === id ? { ...c, done: !c.done } : c)))
+  }
   const update: Store['update'] = (id, patch) => setChores((l) => l.map((c) => (c.id === id ? { ...c, ...patch } : c)))
   return <Ctx.Provider value={{ chores, reminded, remind, add, toggle, update }}>{children}</Ctx.Provider>
 }
